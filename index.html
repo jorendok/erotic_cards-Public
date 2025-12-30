@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>春閨戲密圖 | 古風情趣卡牌</title>
+    <title>隱密指令</title>
     <style>
         :root { --gold: #d4af37; --bg: #0a0a0a; }
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
@@ -241,4 +241,42 @@
             }
         }
 
-        function trigger
+        function triggerExtra(target, title) {
+            showOverlay(title, [{ text: "抽一張額外指令", action: () => {
+                hideOverlay();
+                state.isFlipped = false;
+                const oldStage = state.stage;
+                state.stage = target;
+                handleFlip();
+                state.stage = oldStage;
+            }}]);
+        }
+
+        function next() { hideOverlay(); resetCard(); }
+        function resetCard() {
+            document.getElementById('card-obj').classList.remove('is-flipped');
+            document.getElementById('ui-layer').style.display = 'none';
+            state.isFlipped = false;
+            updateCover();
+        }
+        function updateCover() { document.getElementById('card-back').style.backgroundImage = `url('${state.stage}-cover.${ext}')`; }
+        function showOverlay(msg, btns) {
+            const ov = document.getElementById('game-overlay');
+            document.getElementById('overlay-msg').innerHTML = msg;
+            const btnContainer = document.getElementById('overlay-btns');
+            btnContainer.innerHTML = '';
+            btns.forEach(b => {
+                const el = document.createElement('button');
+                el.className = 'btn';
+                el.innerText = b.text;
+                el.onclick = b.action;
+                btnContainer.appendChild(el);
+            });
+            ov.style.display = 'flex';
+        }
+        function hideOverlay() { document.getElementById('game-overlay').style.display = 'none'; }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
