@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>春閨戲密圖 | 古風情趣卡牌</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0a0a0a; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+
+        .card-container {
+            position: relative;
+            height: 75vh;
+            aspect-ratio: 472 / 945;
+            perspective: 1200px;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        .card.is-flipped { transform: rotateY(180deg); }
+        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-size: cover; background-position: center; border-radius: 15px; }
+        .face-front { transform: rotateY(180deg); }
+
+        /* 1. 按鈕位置下移：從原本的 12% 改為 7% */
+        .ui-layer {
+            position: absolute; bottom: 7%; left: 0; width: 100%;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 10; pointer-events: none;
+        }
+
+        .btn {
+            pointer-events: auto; background: var(--gold); color: black; border: none;
+            padding: 12px 28px; border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+        }
+
+        .dice-row { display: flex; align-items: center; justify-content: center; gap: 10px; }
+        #dice-text {
+            background: rgba(0,0,0,0.85); color: var(--gold); border: 1px solid var(--gold);
+            padding: 8px 18px; border-radius: 12px; font-size: 18px; font-weight: bold; display: none;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.96); z-index: 100;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+        }
+        #game-overlay { display: none; z-index: 200; background: rgba(0,0,0,0.9); }
+        .msg { color: var(--gold); font-size: 22px; margin-bottom: 30px; padding: 0 40px; }
+        .loading-bar { width: 200px; height: 3px; background: #222; margin-top: 20px; }
+        .bar-fill { height: 100%; width: 0%; background: var(--gold); transition: width 0.2s; }
+    </style>
+</head>
+<body>
+
+    <div id="loading-screen" class="overlay">
+        <div style="color:var(--gold);">載入中... <span id="percent">0%</span></div>
+        <div class="loading-bar"><div id="bar-fill" class="bar-fill"></div></div>
+    </div>
+
+    <div class="card-container" id="main-ui" onclick="handleFlip()">
+        <div id="card-obj" class="card">
+            <div id="card-front" class="face face-front"></div>
+            <div id="card-back" class="face face-back"></div>
+        </div>
+        <div id="ui-layer" class="ui-layer">
+            <div class="dice-row">
+                <div id="dice-text"></div>
+                <button id="action-btn" class="btn" onclick="handleAction(event)"></button>
+            </div>
+        </div>
+    </div>
+
+    <div id="game-overlay" class="overlay">
+        <div id="overlay-msg" class="msg"></div>
+        <div id="overlay-btns" style="display:flex; flex-direction:column; gap:15px;"></div>
+    </div>
+
+    <script>
+        const ext = 'png';
+        const diceData = { 1: ["5秒", "10秒", "15秒", "20秒", "25秒", "30秒"], 2: ["3次", "5次", "10次", "15次", "20次", "30次"] };
+        
+        // 3. 機率設定區：可隨時調整
+        const PROB = {
+            MISSION: 0.35, // 35% 出現挑戰卡
+            SHAME: 0.35,   // 35% 出現羞恥卡
+            MAIN: 0.30     // 30% 維持第二章主線
+        };
+
+        const manifest = {
+            level1: ["01-1", "02-0", "03-off-0", "04-2", "05-off-0", "06-0", "07-1", "08-2", "09-off-0", "10-1", "11-2", "12-0", "13-off-0", "14-off-0", "15-1", "16-1", "17-0", "18-last-0", "19-2", "20-off-0"],
+            level2: ["01-1", "02-1", "03-1", "04-1", "05-1", "06-2", "07-1", "08-1", "09-1", "10-2", "11-2", "12-1", "13-2", "14-2", "15-2"],
+            sexual: ["01-1", "02-s-0", "03-1", "04-m-0", "05-1", "06-1", "07-s-2", "08-1", "09-m-0", "10-1", "11-s-0", "12-over-0"],
+            mission: ["01-0", "02-0", "03-1", "04-1", "05-2", "06-2", "07-1", "08-0", "09-1", "10-1", "11-2", "12-1", "13-2", "14-1", "15-1", "16-0", "17-0", "18-1", "19-1", "20-0"],
+            shame: ["01-0", "02-0", "03-0", "04-0", "05-2", "06-0", "07-2", "08-0", "09-0", "10-1", "11-2", "12-0", "13-1", "14-0", "15-1", "16-0", "17-1", "18-1", "19-2", "20-0"]
+        };
+
+        let state = {
+            stage: 'level1',
+            nextPool: 'level1', // 2. 核心：預測下一抽的種類
+            isFlipped: false,
+            offCount: 0,
+            l2Draws: 0,
+            sexualDraws: 0,
+            isL2Extended: false,
+            currentCard: null,
+            pools: {}
+        };
+
+        function init() {
+            Object.keys(manifest).forEach(k => {
+                let p = [...manifest[k]];
+                if (k === 'level1') p = p.filter(f => !f.includes('last'));
+                if (k === 'sexual') p = p.filter(f => !f.includes('over'));
+                state.pools[k] = p;
+            });
+
+            const priority = [`level1-cover.${ext}`, `level2-cover.${ext}`, `sexual-cover.${ext}`, `mission-cover.${ext}`, `shame-cover.${ext}`];
+            manifest.level1.forEach(f => priority.push(`level1-${f}.${ext}`));
+            
+            let loaded = 0;
+            priority.forEach(src => {
+                const img = new Image();
+                img.onload = img.onerror = () => {
+                    loaded++;
+                    const p = Math.floor((loaded / priority.length) * 100);
+                    document.getElementById('percent').innerText = p + '%';
+                    document.getElementById('bar-fill').style.width = p + '%';
+                    if (loaded >= priority.length) start();
+                };
+                img.src = src;
+            });
+
+            setTimeout(() => {
+                ['level2', 'sexual', 'mission', 'shame'].forEach(s => {
+                    manifest[s].forEach(f => { new Image().src = `${s}-${f}.${ext}`; });
+                });
+            }, 3000);
+        }
+
+        function start() {
+            document.getElementById('loading-screen').style.display = 'none';
+            document.getElementById('main-ui').style.opacity = '1';
+            state.nextPool = 'level1';
+            updateCover();
+        }
+
+        function handleFlip() {
+            if (state.isFlipped) return;
+
+            // 使用預先決定好的 Pool
+            let poolKey = state.nextPool;
+
+            // 特殊邏輯插入
+            if (state.stage === 'level1' && (20 - state.pools.level1.length) === 10) {
+                if (!state.pools.level1.some(f => f.includes('last'))) state.pools.level1.push(manifest.level1.find(f => f.includes('last')));
+            }
+            if (state.stage === 'sexual') {
+                state.sexualDraws++;
+                if (state.sexualDraws === 6) state.pools.sexual.push(manifest.sexual.find(f => f.includes('over')));
+            }
+
+            let pool = state.pools[poolKey];
+            // 防止 Pool 被抽乾導致黑畫面，若空了就抽主線
+            if (!pool || pool.length === 0) pool = state.pools[state.stage];
+
+            const idx = Math.floor(Math.random() * pool.length);
+            const cardData = pool.splice(idx, 1)[0];
+            state.currentCard = { key: poolKey, info: cardData };
+
+            document.getElementById('card-front').style.backgroundImage = `url('${poolKey}-${cardData}.${ext}')`;
+            document.getElementById('card-obj').classList.add('is-flipped');
+            state.isFlipped = true;
+
+            setTimeout(() => {
+                const type = cardData.split('-').pop();
+                const btn = document.getElementById('action-btn');
+                document.getElementById('ui-layer').style.display = 'flex';
+                document.getElementById('dice-text').style.display = 'none';
+
+                if (type === '1') btn.innerText = "擲時間骰";
+                else if (type === '2') btn.innerText = "擲次數骰";
+                else btn.innerText = "完成任務";
+            }, 600);
+
+            checkLogic(poolKey, cardData);
+        }
+
+        function handleAction(e) {
+            e.stopPropagation();
+            const btn = document.getElementById('action-btn');
+            const type = state.currentCard.info.split('-').pop();
+
+            if (btn.innerText.includes("擲")) {
+                const result = diceData[type][Math.floor(Math.random() * 6)];
+                const dText = document.getElementById('dice-text');
+                dText.innerText = result;
+                dText.style.display = 'block';
+                btn.innerText = "完成任務";
+            } else {
+                const info = state.currentCard.info;
+                if (info.includes('-s-')) {
+                    triggerExtra('shame', '觸發：羞恥禁令');
+                } else if (info.includes('-m-')) {
+                    triggerExtra('mission', '觸發：春宮密令');
+                } else {
+                    resetCard();
+                }
+            }
+        }
+
+        function resetCard() {
+            document.getElementById('card-obj').classList.remove('is-flipped');
+            document.getElementById('ui-layer').style.display = 'none';
+            state.isFlipped = false;
+
+            // 2. 決定「下一張」是什麼，並換封面
+            if (state.stage === 'level2') {
+                const r = Math.random();
+                if (r < PROB.MISSION) state.nextPool = 'mission';
+                else if (r < (PROB.MISSION + PROB.SHAME)) state.nextPool = 'shame';
+                else state.nextPool = 'level2';
+            } else {
+                state.nextPool = state.stage;
+            }
+
+            setTimeout(updateCover, 300); // 翻轉中途換封面
+        }
+
+        function updateCover() {
+            document.getElementById('card-back').style.backgroundImage = `url('${state.nextPool}-cover.${ext}')`;
+        }
+
+        function checkLogic(poolKey, info) {
+            if (state.stage === 'level1') {
+                if (info.includes('off')) state.offCount++;
+                if (state.offCount >= 8 || info.includes('last')) {
+                    showOverlay("衣衫已盡<br>即將進入『帳暖春風』", [{ text: "進入第二章", action: () => { state.stage = 'level2'; next(); } }]);
+                }
+            } else if (state.stage === 'level2') {
+                state.l2Draws++;
+                const limit = state.isL2Extended ? 21 : 15;
+                if (state.l2Draws >= limit) {
+                    if (!state.isL2Extended) {
+                        showOverlay("氣氛已熱<br>是否進入下一階段？", [
+                            { text: "直接進入雲雨", action: () => { state.stage = 'sexual'; next(); } },
+                            { text: "意猶未盡 (追加6抽)", action: () => { state.isL2Extended = true; next(); } }
+                        ]);
+                    } else {
+                        showOverlay("該是『雲雨交歡』的時候了", [{ text: "進入第三章", action: () => { state.stage = 'sexual'; next(); } }]);
+                    }
+                }
+            }
+            if (info.includes('over')) {
+                showOverlay("雲雨既終，良宵暫歇", [{ text: "重新開始遊戲", action: () => location.reload() }]);
+            }
+        }
+
+        function triggerExtra(target, title) {
+            showOverlay(title, [{ text: "抽一張額外指令", action: () => {
+                hideOverlay();
+                state.isFlipped = false;
+                state.nextPool = target; // 強制下一抽是該卡
+                handleFlip();
+            }}]);
+        }
+
+        function next() { hideOverlay(); resetCard(); }
+        function showOverlay(msg, btns) {
+            const ov = document.getElementById('game-overlay');
+            document.getElementById('overlay-msg').innerHTML = msg;
+            const btnContainer = document.getElementById('overlay-btns');
+            btnContainer.innerHTML = '';
+            btns.forEach(b => {
+                const el = document.createElement('button');
+                el.className = 'btn';
+                el.innerText = b.text;
+                el.onclick = b.action;
+                btnContainer.appendChild(el);
+            });
+            ov.style.display = 'flex';
+        }
+        function hideOverlay() { document.getElementById('game-overlay').style.display = 'none'; }
+        window.onload = init;
+    </script>
+</body>
+</html>
