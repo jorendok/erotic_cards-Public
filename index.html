@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>春閨戲密圖 | 古風情趣卡牌</title>
+    <style>
+        :root { --gold: #d4af37; --bg: #0a0a0a; }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+        body { margin: 0; background: var(--bg); color: white; font-family: 'Noto Serif TC', serif; height: 100vh; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+
+        .card-container { position: relative; height: 75vh; aspect-ratio: 472 / 945; perspective: 1200px; opacity: 1; transition: opacity 0.8s; }
+        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        .card.is-flipped { transform: rotateY(180deg); }
+        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-size: cover; background-position: center; border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.8); }
+        .face-front { transform: rotateY(180deg); }
+
+        .ui-layer { position: absolute; bottom: 8%; left: 0; width: 100%; display: none; flex-direction: column; align-items: center; z-index: 10; pointer-events: none; }
+        
+        /* 倒數計時按鈕特效 */
+        .btn { 
+            pointer-events: auto; background: var(--gold); color: black; border: none; 
+            padding: 12px 28px; border-radius: 25px; font-weight: bold; font-size: 16px; 
+            cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.6); 
+            position: relative; overflow: hidden; min-width: 140px; transition: all 0.3s;
+        }
+        .btn.counting { background: #333; color: var(--gold); border: 1px solid var(--gold); }
+        .btn-progress { 
+            position: absolute; left: 0; top: 0; height: 100%; background: rgba(212, 175, 55, 0.2); 
+            width: 0%; pointer-events: none; transition: width 1s linear; 
+        }
+
+        #dice-text { background: rgba(0,0,0,0.85); color: var(--gold); border: 1px solid var(--gold); padding: 8px 18px; border-radius: 12px; font-size: 18px; font-weight: bold; display: none; margin-bottom: 10px; }
+
+        #transition-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: radial-gradient(circle, #222 0%, #000 100%); z-index: 500; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .poem { font-size: 24px; color: var(--gold); letter-spacing: 8px; writing-mode: vertical-rl; opacity: 0; transition: opacity 1.5s; line-height: 1.5; }
+
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .msg { color: var(--gold); font-size: 20px; margin-bottom: 30px; line-height: 1.6; padding: 0 30px; }
+        
+        #skip-btn { background: transparent; border: 1px solid #444; color: #666; padding: 6px 15px; border-radius: 20px; font-size: 12px; margin-top: 15px; pointer-events: auto; display:none; }
+    </style>
+</head>
+<body>
+
+    <div id="transition-overlay"><div id="poem-text" class="poem"></div></div>
+
+    <div class="card-container" id="main-ui" onclick="handleFlip()">
+        <div id="card-obj" class="card">
+            <div id="card-front" class="face face-front"></div>
+            <div id="card-back" class="face face-back"></div>
+        </div>
+        <div id="ui-layer" class="ui-layer">
+            <div id="dice-text"></div>
+            <button id="action-btn" class="btn" onclick="handleAction(event)">
+                <div id="btn-progress" class="btn-progress"></div>
+                <span id="btn-label">點擊操作</span>
+            </button>
+            <button id="skip-btn" onclick="forceNextStage(event)">慾火已燃，進入下一章</button>
+        </div>
+    </div>
+
+    <div id="game-overlay" class="overlay" style="display:none;">
+        <div id="overlay-msg" class="msg"></div>
+        <div id="overlay-btns" style="display:flex; flex-direction:column; gap:15px;"></div>
+    </div>
+
+    <script>
+        const ext = 'png';
+        const diceData = { 1: [5, 10, 15, 20, 25, 30], 2: ["3次", "5次", "10次", "15次", "20次", "30次"] };
+        const manifest = {
+            level1: ["01-1", "02-0", "03-off-0", "04-2", "05-off-0", "06-0", "07-1", "08-2", "09-off-0", "10-1", "11-2", "12-0", "13-off-0", "14-off-0", "15-1", "16-1", "17-0", "18-last-0", "19-2", "20-off-0"],
+            level2: ["01-1", "02-1", "03-1", "04-1", "05-1", "06-2", "07-1", "08-1", "09-1", "10-2", "11-2", "12-1", "13-2", "14-2", "15-2"],
+            sexual: ["01-1", "02-s-0", "03-1", "04-m-0", "05-1", "06-1", "07-s-2", "08-1", "09-m-0", "10-1", "11-s-0", "12-over-0"],
+            mission: ["01-0", "02-0", "03-1", "04-1", "05-2", "06-2", "07-1", "08-0", "09-1", "10-1", "11-2", "12-1", "13-2", "14-1", "15-1", "16-0", "17-0", "18-1", "19-1", "20-0"],
+            shame: ["01-0", "02-0", "03-0", "04-0", "05-2", "06-0", "07-2", "08-0", "09-0", "10-1", "11-2", "12-0", "13-1", "14-0", "15-1", "16-0", "17-1", "18-1", "19-2", "20-0"]
+        };
+
+        let state = {
+            stage: 'level1', nextPool: 'level1', isFlipped: false,
+            drawCount: 0, offCount: 0, sexualDraws: 0,
+            isL2Extended: false, hasAskedQuick: false,
+            currentCard: null, pools: {}, timer: null, timeLeft: 0
+        };
+
+        function init() {
+            Object.keys(manifest).forEach(k => { state.pools[k] = [...manifest[k]].filter(f => !f.includes('last') && !f.includes('over')); });
+            document.getElementById('card-back').style.backgroundImage = `url('level1-cover.${ext}')`;
+        }
+
+        function handleFlip() {
+            if (state.isFlipped) return;
+            if (state.stage === 'level2' && state.nextPool === 'level2') {
+                const r = Math.random();
+                if (r < 0.25) return triggerExtra('mission', '🔥 抽中：春宮密令', '接受挑戰吧！');
+                if (r < 0.50) return triggerExtra('shame', '😳 抽中：羞恥禁令', '準備好臉紅心跳了嗎？');
+            }
+            let poolKey = state.nextPool;
+            let pool = state.pools[poolKey] || state.pools[state.stage];
+            if (state.stage === 'level1') {
+                let prob = state.drawCount < 5 ? 0.15 : (state.drawCount < 10 ? 0.30 : 0.50);
+                if (state.drawCount >= 11 && state.offCount < 7) prob = 0.8;
+                const type = Math.random() < prob ? 'off' : 'normal';
+                const filtered = pool.filter(f => type === 'off' ? f.includes('off') : !f.includes('off'));
+                pool = filtered.length > 0 ? filtered : pool;
+            }
+            const idx = Math.floor(Math.random() * pool.length);
+            const cardData = pool.splice(idx, 1)[0];
+            state.currentCard = { key: poolKey, info: cardData };
+            state.drawCount++;
+            if (cardData.includes('off')) state.offCount++;
+
+            document.getElementById('card-front').style.backgroundImage = `url('${poolKey}-${cardData}.${ext}')`;
+            document.getElementById('card-obj').classList.add('is-flipped');
+            state.isFlipped = true;
+
+            setTimeout(() => {
+                document.getElementById('ui-layer').style.display = 'flex';
+                document.getElementById('dice-text').style.display = 'none';
+                updateBtnLabel("點擊擲骰");
+                if (state.stage === 'level2' && state.drawCount >= 10) document.getElementById('skip-btn').style.display = 'block';
+            }, 600);
+        }
+
+        function handleAction(e) {
+            e.stopPropagation();
+            if (state.timer) { stopTimer(); return; } // 計時中點擊可停止
+            
+            const label = document.getElementById('btn-label').innerText;
+            const type = state.currentCard.info.split('-').pop();
+
+            if (label === "點擊擲骰") {
+                const res = diceData[type][Math.floor(Math.random() * 6)];
+                document.getElementById('dice-text').innerText = (type === '1' ? res + " 秒" : res);
+                document.getElementById('dice-text').style.display = 'block';
+                
+                if (type === '1') {
+                    state.timeLeft = res;
+                    updateBtnLabel("開始計時");
+                } else {
+                    updateBtnLabel("完成任務");
+                }
+            } else if (label === "開始計時") {
+                startTimer();
+            } else if (label === "完成任務") {
+                checkGameProgress();
+            }
+        }
+
+        function startTimer() {
+            const btn = document.getElementById('action-btn');
+            const progress = document.getElementById('btn-progress');
+            const total = state.timeLeft;
+            btn.classList.add('counting');
+            progress.style.width = '100%';
+            
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                updateBtnLabel(`剩餘 ${state.timeLeft} 秒`);
+                progress.style.width = `${(state.timeLeft / total) * 100}%`;
+                
+                if (state.timeLeft <= 0) {
+                    stopTimer();
+                    if (navigator.vibrate) navigator.vibrate(200);
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(state.timer);
+            state.timer = null;
+            document.getElementById('action-btn').classList.remove('counting');
+            document.getElementById('btn-progress').style.width = '0%';
+            updateBtnLabel("完成任務");
+        }
+
+        function updateBtnLabel(txt) { document.getElementById('btn-label').innerText = txt; }
+
+        function checkGameProgress() {
+            if (state.stage === 'level1' && state.drawCount === 6 && !state.hasAskedQuick) {
+                state.hasAskedQuick = true;
+                return showOverlay("看著彼此，是否已心癢難耐？", [
+                    { text: "迫不及待坦誠相見", action: () => forceNextStage() },
+                    { text: "我們想慢慢來", action: () => resetCard() }
+                ]);
+            }
+            if (state.stage === 'level1' && (state.offCount >= 7 || state.drawCount >= 13)) {
+                return playTransition("雲想衣裳花想容，<br>春風拂檻露華濃。", "level2");
+            }
+            if (state.stage === 'level2') {
+                const limit = state.isL2Extended ? 20 : 14;
+                if (state.drawCount >= limit) {
+                    if (!state.isL2Extended) {
+                        return showOverlay("情慾已然沸騰...", [
+                            { text: "進入雲雨交歡", action: () => playTransition("金風玉露一相逢，<br>便勝卻人間無數。", "sexual") },
+                            { text: "意猶未盡(追加6抽)", action: () => { state.isL2Extended = true; resetCard(); } }
+                        ]);
+                    } else { return playTransition("金風玉露一相逢，<br>便勝卻人間無數。", "sexual"); }
+                }
+            }
+            if (state.stage === 'sexual') {
+                state.sexualDraws++;
+                if (state.sexualDraws >= 7) return showOverlay("隨君所欲，盡情享受", [{ text: "良宵溫存", action: () => location.reload() }]);
+            }
+            resetCard();
+        }
+
+        function resetCard() {
+            hideOverlay();
+            document.getElementById('card-obj').classList.remove('is-flipped');
+            document.getElementById('ui-layer').style.display = 'none';
+            state.isFlipped = false;
+            if (state.stage === 'level2') {
+                const r = Math.random();
+                state.nextPool = r < 0.25 ? 'mission' : (r < 0.5 ? 'shame' : 'level2');
+            } else { state.nextPool = state.stage; }
+            setTimeout(() => { document.getElementById('card-back').style.backgroundImage = `url('${state.nextPool}-cover.${ext}')`; }, 300);
+        }
+
+        function playTransition(text, nextStage) {
+            hideOverlay();
+            const ov = document.getElementById('transition-overlay');
+            const p = document.getElementById('poem-text');
+            ov.style.display = 'flex';
+            setTimeout(() => { p.innerHTML = text; p.style.opacity = 1; }, 100);
+            setTimeout(() => {
+                p.style.opacity = 0;
+                setTimeout(() => {
+                    ov.style.display = 'none';
+                    state.stage = nextStage; state.nextPool = nextStage;
+                    state.drawCount = 0; state.offCount = 0; state.isL2Extended = false;
+                    document.getElementById('skip-btn').style.display = 'none';
+                    resetCard();
+                }, 1000);
+            }, 3000);
+        }
+
+        function triggerExtra(target, title, msg) {
+            showOverlay(`${title}<br><small>${msg}</small>`, [{ text: "接受挑戰", action: () => { 
+                state.nextPool = target; 
+                document.getElementById('card-back').style.backgroundImage = `url('${target}-cover.${ext}')`;
+                hideOverlay(); 
+            }}]);
+        }
+
+        function forceNextStage(e) { if(e) e.stopPropagation(); playTransition(state.stage === 'level1' ? "春色滿園關不住..." : "共赴巫山雲雨...", state.stage === 'level1' ? 'level2' : 'sexual'); }
+        function showOverlay(msg, btns) {
+            const o = document.getElementById('game-overlay');
+            document.getElementById('overlay-msg').innerHTML = msg;
+            const c = document.getElementById('overlay-btns'); c.innerHTML = '';
+            btns.forEach(b => {
+                const el = document.createElement('button'); el.className = 'btn'; el.innerText = b.text; el.onclick = b.action; c.appendChild(el);
+            });
+            o.style.display = 'flex';
+        }
+        function hideOverlay() { document.getElementById('game-overlay').style.display = 'none'; }
+        window.onload = init;
+    </script>
+</body>
+</html>
