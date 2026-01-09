@@ -9,33 +9,29 @@
         * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; outline: none; }
         body { margin: 0; background: var(--bg); color: white; font-family: 'Noto Serif TC', serif, "Apple Color Emoji", "Segoe UI Emoji"; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 0; }
 
-        /* UI 工具列 */
         .top-tools { position: fixed; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 600; }
         .tool-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--gold); cursor: pointer; font-size: 22px; text-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
 
         #stage-header { color: var(--gold); font-size: 18px; letter-spacing: 2px; height: 30px; margin-top: 15px; }
 
-        /* 卡牌區域 */
         .card-container { position: relative; height: 72vh; aspect-ratio: 472 / 945; perspective: 1200px; margin: 0 auto; }
         .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
         .card.is-flipped { transform: rotateY(180deg); }
-        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-size: cover; background-position: center; border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.3); box-shadow: 0 10px 40px rgba(0,0,0,0.9); }
+        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-size: cover; background-position: center; border-radius: 15px; border: 1px solid rgba(212, 175, 55, 0.3); }
         .face-front { transform: rotateY(180deg); }
 
-        /* 下方控制區 */
-        .controls-layer { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        .btn { background: var(--gold); color: black; border: none; padding: 12px 28px; border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer; position: relative; overflow: hidden; min-width: 160px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        .controls-layer { width: 100%; height: 110px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        .btn { background: var(--gold); color: black; border: none; padding: 12px 28px; border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer; min-width: 160px; }
         .btn.counting { background: #222; color: var(--gold); border: 1px solid var(--gold); }
-        .btn-progress { position: absolute; left: 0; top: 0; height: 100%; background: rgba(212, 175, 55, 0.3); width: 0%; pointer-events: none; }
+        .btn-progress { position: absolute; right: 0; top: 0; height: 100%; background: rgba(212, 175, 55, 0.25); width: 0%; pointer-events: none; }
         
-        #dice-text { color: var(--gold); font-size: 24px; font-weight: bold; height: 35px; margin-bottom: 5px; }
-        #skip-btn { background: transparent; border: 1px solid #444; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 11px; margin-top: 8px; display: none; }
+        #dice-text { color: var(--gold); font-size: 24px; font-weight: bold; height: 32px; margin-bottom: 5px; }
+        #skip-btn { background: transparent; border: 1px solid #444; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 11px; margin-top: 5px; display: none; }
 
-        /* 彈窗 */
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
         .gate-box { padding: 30px; border: 1px solid var(--gold); background: #0d0d0d; border-radius: 20px; width: 85%; max-width: 400px; }
         #transition-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .poem { font-size: 24px; color: var(--gold); letter-spacing: 8px; writing-mode: vertical-rl; opacity: 0; transition: opacity 1.5s; line-height: 1.5; }
+        .poem { font-size: 24px; color: var(--gold); letter-spacing: 8px; writing-mode: vertical-rl; opacity: 0; transition: opacity 1.5s; }
     </style>
 </head>
 <body>
@@ -68,8 +64,19 @@
     <div id="age-gate" class="overlay">
         <div class="gate-box">
             <h2 style="color:var(--gold);">春閨戲密圖</h2>
-            <p style="color:#ccc; font-size: 14px; margin-bottom: 25px;">本遊戲包含成人文案內容與肢體指令，<br>僅供成年伴侶情趣互動使用。<br>進入前請確認您已年滿 18 歲。</p>
+            <p style="color:#ccc; font-size: 14px; margin-bottom: 25px;">確認您已年滿 18 歲以開啟遊戲。</p>
             <button class="btn" onclick="acceptAge()">我已滿 18 歲</button>
+        </div>
+    </div>
+
+    <div id="info-overlay" class="overlay" style="display:none;" onclick="this.style.display='none'">
+        <div class="gate-box">
+            <h3 style="color:var(--gold);">遊玩指南</h3>
+            <p style="text-align:left; font-size:14px; color:#ccc; line-height: 2;">
+                ● 點擊卡片翻開指令。<br>
+                ● 隨機出現「春宮密令」與「羞恥禁令」。
+            </p>
+            <button class="btn" onclick="document.getElementById('info-overlay').style.display='none'">了解</button>
         </div>
     </div>
 
@@ -93,7 +100,7 @@
             shame: ["01-0", "02-0", "03-0", "04-0", "05-2", "06-0", "07-2", "08-0", "09-0", "10-1", "11-2", "12-0", "13-1", "14-0", "15-1", "16-0", "17-1", "18-1", "19-2", "20-0"]
         };
 
-        let state = { stage: 'level1', nextPool: 'level1', isFlipped: false, drawCount: 0, offCount: 0, isMuted: false, timer: null, timeLeft: 0, pools: {}, isExtraPending: false };
+        let state = { stage: 'level1', nextPool: 'level1', isFlipped: false, drawCount: 0, offCount: 0, isMuted: false, timer: null, pools: {}, isExtraPending: false };
 
         function acceptAge() {
             [timerAudio, flipAudio].forEach(a => { a.play().then(()=>a.pause()).catch(()=>{}) });
@@ -115,27 +122,33 @@
         function handleFlip() {
             if (state.isFlipped) return;
 
-            // 挑戰卡判定
+            // 1. 檢查是否要觸發「隨機挑戰彈窗」
+            // 條件：在第二章、且目前不是在抽挑戰卡池、且尚未標記要執行挑戰
             if (state.stage === 'level2' && state.nextPool === 'level2' && !state.isExtraPending) {
-                if (Math.random() < 0.25) {
-                    state.isExtraPending = true;
+                if (Math.random() < 0.25) { // 25% 機率觸發
+                    state.isExtraPending = true; // 鎖定狀態，防止重複判定
                     const target = Math.random() < 0.5 ? 'mission' : 'shame';
                     triggerExtra(target, target==='mission'?'🔥 抽中：春宮密令':'😳 抽中：羞恥禁令', '接受挑戰');
                     return;
                 }
             }
 
+            // 2. 正常翻牌邏輯
             if (!state.isMuted) flipAudio.play();
 
             let poolKey = state.nextPool;
             let pool = state.pools[poolKey];
+            
+            // 隨機選一張
             const idx = Math.floor(Math.random() * pool.length);
             const cardData = pool.splice(idx, 1)[0];
             state.currentCard = { key: poolKey, info: cardData };
             
+            // 統計
             state.drawCount++;
             if (cardData.includes('off')) state.offCount++;
 
+            // 更新圖片與翻轉
             document.getElementById('card-front').style.backgroundImage = `url('${poolKey}-${cardData}.${ext}')`;
             document.getElementById('card-obj').classList.add('is-flipped');
             state.isFlipped = true;
@@ -148,80 +161,32 @@
             }, 600);
         }
 
-        function handleAction(e) {
-            e.stopPropagation();
-            if (state.timer) { stopTimer(); return; } // 計時中點擊可停止
-
-            const label = document.getElementById('btn-label').innerText;
-            const type = state.currentCard.info.split('-').pop();
-
-            if (label === "點擊擲骰") {
-                const res = diceData[type][Math.floor(Math.random() * 6)];
-                document.getElementById('dice-text').innerText = (type === '1' ? res + " 秒" : res);
-                if (type === '1') {
-                    state.timeLeft = parseInt(res);
-                    updateBtnLabel("開始計時");
-                } else {
-                    updateBtnLabel("完成任務");
-                }
-            } else if (label === "開始計時") {
-                startTimer();
-            } else {
-                checkGameProgress();
-            }
-        }
-
-        function startTimer() {
-            const btn = document.getElementById('action-btn');
-            const progress = document.getElementById('btn-progress');
-            btn.classList.add('counting');
-            
-            const total = state.timeLeft;
-            progress.style.transition = 'none';
-            progress.style.width = '0%';
-            
-            setTimeout(() => {
-                progress.style.transition = `width ${total}s linear`;
-                progress.style.width = '100%';
-            }, 50);
-
-            state.timer = setInterval(() => {
-                state.timeLeft--;
-                updateBtnLabel(`剩餘 ${state.timeLeft} 秒`);
-                if (state.timeLeft <= 0) {
-                    stopTimer();
-                    if (!state.isMuted) timerAudio.play();
-                }
-            }, 1000);
-        }
-
-        function stopTimer() {
-            clearInterval(state.timer);
-            state.timer = null;
-            document.getElementById('action-btn').classList.remove('counting');
-            updateBtnLabel("完成任務");
-        }
-
         function triggerExtra(target, title, btnText) {
             showOverlay(title, [{ text: btnText, action: () => {
                 state.nextPool = target; 
+                // 換封面，這時使用者看到封面換了，會想點擊
                 document.getElementById('card-back').style.backgroundImage = `url('${target}-cover.${ext}')`;
                 hideOverlay();
+                // 注意：這裡不主動 handleFlip，讓使用者手動點擊那張「新封面的卡」
             }}]);
         }
 
         function checkGameProgress() {
+            // 第一章結束判斷
             if (state.stage === 'level1' && (state.offCount >= 7 || state.drawCount >= 12)) {
                 return playTransition("雲想衣裳花想容，<br>春風拂檻露華濃。", "level2");
             }
+            // 第二章結束判斷
             if (state.stage === 'level2' && state.drawCount >= 14 && !state.isL2Extended) {
                 return showOverlay("情慾已然沸騰...", [
                     { text: "進入雲雨交歡", action: () => playTransition("金風玉露一相逢，<br>便勝卻人間無數。", "sexual") },
                     { text: "意猶未盡(+6抽)", action: () => { state.isL2Extended = true; resetCard(); } }
                 ]);
             }
+            // 第三章結束
             if (state.stage === 'sexual' && state.drawCount >= 7) {
-                return showOverlay("纏綿悱惻，春光無限", [{ text: "重啟良宵", action: () => location.reload() }]);
+                const finalMsg = "纏綿悱惻，春光無限<br><small>盡情沉醉於交歡之樂</small><br><br><span style='font-size:14px; color:#888;'>為下次的美好時光做準備？</span><br><a href='https://your-ad-link.com' class='ad-link' target='_blank'>查看 Blanc 精選情趣選物</a>";
+                return showOverlay(finalMsg, [{ text: "良宵再續 (重新開始)", action: () => location.reload() }]);
             }
             resetCard();
         }
@@ -229,16 +194,23 @@
         function resetCard() {
             document.getElementById('card-obj').classList.remove('is-flipped');
             document.getElementById('action-area').style.display = 'none';
-            document.getElementById('btn-progress').style.width = '0%';
             document.getElementById('dice-text').innerText = '';
             state.isFlipped = false;
-            state.isExtraPending = false;
+            state.isExtraPending = false; // 解鎖挑戰判定
             hideOverlay();
             
             setTimeout(() => {
-                if (state.nextPool === 'mission' || state.nextPool === 'shame') state.nextPool = state.stage;
+                // 如果剛才抽的是挑戰卡池，抽完後要切換回主章節
+                if (state.nextPool === 'mission' || state.nextPool === 'shame') {
+                    state.nextPool = state.stage;
+                }
                 document.getElementById('card-back').style.backgroundImage = `url('${state.nextPool}-cover.${ext}')`;
             }, 300);
+        }
+
+        function updateHeader() {
+            const titles = { 'level1': '第一章 試探春心', 'level2': '第二章 帳暖春風', 'sexual': '第三章 雲雨交歡' };
+            document.getElementById('stage-header').innerText = titles[state.stage];
         }
 
         function playTransition(text, nextStage) {
@@ -258,13 +230,23 @@
             }, 3000);
         }
 
-        function updateHeader() {
-            const titles = { 'level1': '第一章 試探春心', 'level2': '第二章 帳暖春風', 'sexual': '第三章 雲雨交歡' };
-            document.getElementById('stage-header').innerText = titles[state.stage];
-            if (state.stage === 'sexual') document.getElementById('skip-btn').style.display = 'none';
+        function showInfo() { document.getElementById('info-overlay').style.display = 'flex'; }
+        function updateBtnLabel(txt) { document.getElementById('btn-label').innerText = txt; }
+        
+        function handleAction(e) {
+            e.stopPropagation();
+            const label = document.getElementById('btn-label').innerText;
+            const type = state.currentCard.info.split('-').pop();
+
+            if (label === "點擊擲骰") {
+                const res = diceData[type][Math.floor(Math.random() * 6)];
+                document.getElementById('dice-text').innerText = (type === '1' ? res + " 秒" : res);
+                updateBtnLabel("完成任務");
+            } else {
+                checkGameProgress();
+            }
         }
 
-        function updateBtnLabel(txt) { document.getElementById('btn-label').innerText = txt; }
         function showOverlay(msg, btns) {
             const o = document.getElementById('game-overlay');
             document.getElementById('overlay-msg').innerHTML = msg;
@@ -275,7 +257,6 @@
             o.style.display = 'flex';
         }
         function hideOverlay() { document.getElementById('game-overlay').style.display = 'none'; }
-        function showInfo() { document.getElementById('info-overlay').style.display = 'flex'; }
         function forceNextStage(e) { e.stopPropagation(); playTransition("春情難遏...", state.stage === 'level1' ? 'level2' : 'sexual'); }
     </script>
 </body>
