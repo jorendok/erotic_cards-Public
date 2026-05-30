@@ -2,296 +2,1205 @@
 <html lang="zh-Hant-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="description" content="春閨戲密圖 — 古風情趣卡牌">
+    <meta name="theme-color" content="#0a0a0a">
     <title>春閨戲密圖 | 古風情趣卡牌</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
     <style>
-        :root { --gold: #d4af37; --bg: #0a0a0a; }
-        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; outline: none; }
-        body { margin: 0; background: var(--bg); color: white; font-family: 'Noto Serif TC', serif, "Apple Color Emoji", "Segoe UI Emoji"; height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: space-between; padding: 15px 0; }
+        :root {
+            --gold: #d4af37;
+            --gold-bright: #e8c558;
+            --gold-soft: rgba(212, 175, 55, 0.5);
+            --gold-ghost: rgba(212, 175, 55, 0.15);
+            --bg: #0a0a0a;
+            --bg-soft: #141014;
+            --shame: #b04040;
+            --mission: #c47a90;
+        }
+        * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; outline: none; -webkit-user-select: none; user-select: none; }
+        html, body { overscroll-behavior: none; }
+        body {
+            margin: 0;
+            background:
+                radial-gradient(ellipse 80% 50% at 50% 0%, rgba(80, 30, 60, 0.35), transparent 70%),
+                radial-gradient(ellipse 80% 50% at 50% 100%, rgba(40, 20, 50, 0.3), transparent 70%),
+                var(--bg);
+            color: white;
+            font-family: 'Noto Serif TC', serif;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: max(env(safe-area-inset-top), 15px) 0 max(env(safe-area-inset-bottom), 15px);
+        }
 
-        /* UI 工具列 */
-        .top-tools { position: fixed; top: 20px; width: 100%; display: flex; justify-content: space-between; padding: 0 20px; z-index: 600; }
-        .tool-btn { background: rgba(0,0,0,0.5); border: 1px solid var(--gold); border-radius: 50%; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; color: var(--gold); cursor: pointer; font-size: 22px; text-shadow: 0 0 8px rgba(212, 175, 55, 0.5); }
+        /* ===== 工具列 ===== */
+        .top-tools {
+            position: fixed;
+            top: max(env(safe-area-inset-top), 18px);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 600;
+            pointer-events: none;
+        }
+        .tool-btn {
+            pointer-events: auto;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid var(--gold-soft);
+            border-radius: 50%;
+            width: 42px;
+            height: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold);
+            cursor: pointer;
+            font-size: 20px;
+            transition: transform 0.2s, background 0.2s;
+        }
+        .tool-btn:active { transform: scale(0.9); background: rgba(212, 175, 55, 0.2); }
 
-        #stage-header { color: var(--gold); font-size: 18px; letter-spacing: 2px; height: 30px; margin-top: 15px; }
+        /* ===== 章節標題 + 進度 ===== */
+        .header-wrap {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            margin-top: 18px;
+            min-height: 50px;
+        }
+        #stage-header {
+            color: var(--gold);
+            font-size: 17px;
+            letter-spacing: 6px;
+            padding-left: 6px; /* 補letter-spacing造成的視覺偏移 */
+            font-weight: 500;
+            text-shadow: 0 0 12px rgba(212, 175, 55, 0.4);
+            transition: opacity 0.4s;
+        }
+        #stage-progress {
+            font-size: 11px;
+            color: rgba(212, 175, 55, 0.6);
+            letter-spacing: 3px;
+            padding-left: 3px;
+            font-weight: 400;
+        }
 
-        /* 卡牌區域 */
-        .card-container { position: relative; height: 72vh; aspect-ratio: 472 / 945; perspective: 1200px; margin: 0 auto; }
-        .card { width: 100%; height: 100%; position: relative; transform-style: preserve-3d; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        /* ===== 卡牌區 ===== */
+        .card-container {
+            position: relative;
+            height: min(72vh, calc(45vw * 945 / 472));
+            aspect-ratio: 472 / 945;
+            perspective: 1400px;
+            margin: 0 auto;
+            cursor: pointer;
+        }
+        .card {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.7s cubic-bezier(0.23, 1, 0.32, 1);
+        }
         .card.is-flipped { transform: rotateY(180deg); }
-        .face { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; background-size: cover; background-position: center;}
+        .card.is-hidden { opacity: 0; transition: opacity 0.4s, transform 0.7s cubic-bezier(0.23, 1, 0.32, 1); }
+        .face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            background-size: cover;
+            background-position: center;
+            border-radius: 14px;
+            box-shadow:
+                0 20px 50px rgba(0, 0, 0, 0.7),
+                0 0 0 1px rgba(212, 175, 55, 0.2);
+            background-color: #1a1018;
+        }
         .face-front { transform: rotateY(180deg); }
+        /* 卡背淡淡發光 */
+        .face-back::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 14px;
+            box-shadow: inset 0 0 30px rgba(212, 175, 55, 0.1);
+            pointer-events: none;
+        }
 
-        /* 下方控制區 */
-        .controls-layer { width: 100%; height: 120px; display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        .btn { background: var(--gold); color: black; border: none; padding: 12px 28px; border-radius: 25px; font-weight: bold; font-size: 16px; cursor: pointer; position: relative; overflow: hidden; min-width: 160px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .btn.counting { background: #222; color: var(--gold); border: 1px solid var(--gold); }
-        .btn-progress { position: absolute; left: 0; top: 0; height: 100%; background: rgba(212, 175, 55, 0.3); width: 0%; pointer-events: none; }
-        
-        #dice-text { color: var(--gold); font-size: 24px; font-weight: bold; height: 35px; margin-bottom: 5px; }
-        #skip-btn { background: transparent; border: 1px solid #444; color: #666; padding: 5px 12px; border-radius: 20px; font-size: 11px; margin-top: 8px; display: none; }
+        /* ===== 控制區 ===== */
+        .controls-layer {
+            width: 100%;
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            z-index: 10;
+            padding-top: 10px;
+            gap: 8px;
+        }
+        #dice-text {
+            color: var(--gold-bright);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: 2px;
+            min-height: 30px;
+            text-shadow: 0 0 14px rgba(212, 175, 55, 0.5);
+            transition: opacity 0.3s;
+        }
+        #dice-text.show { animation: diceReveal 0.5s ease-out; }
+        @keyframes diceReveal {
+            0% { opacity: 0; transform: scale(0.7); }
+            60% { transform: scale(1.15); }
+            100% { opacity: 1; transform: scale(1); }
+        }
 
-        /* 彈窗 */
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 1000; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-        .gate-box { padding: 30px; border: 1px solid var(--gold); background: #0d0d0d; border-radius: 20px; width: 85%; max-width: 400px; }
-        #transition-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; }
-        .poem { font-size: 24px; color: var(--gold); letter-spacing: 8px; writing-mode: vertical-rl; opacity: 0; transition: opacity 1.5s; line-height: 1.5; }
+        .btn {
+            background: linear-gradient(180deg, var(--gold-bright), var(--gold));
+            color: #1a0a14;
+            border: none;
+            padding: 13px 30px;
+            border-radius: 26px;
+            font-weight: 700;
+            font-size: 16px;
+            letter-spacing: 2px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-width: 170px;
+            font-family: inherit;
+            box-shadow:
+                0 6px 18px rgba(0, 0, 0, 0.5),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+        .btn:active { transform: translateY(1px); box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5); }
+        .btn.counting {
+            background: #1a1014;
+            color: var(--gold);
+            border: 1px solid var(--gold-soft);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6), inset 0 0 12px rgba(212, 175, 55, 0.15);
+        }
+        .btn-progress {
+            position: absolute;
+            left: 0;
+            top: 0;
+            height: 100%;
+            background: linear-gradient(90deg, rgba(212, 175, 55, 0.2), rgba(212, 175, 55, 0.4));
+            width: 0%;
+            pointer-events: none;
+        }
+
+        /* 副按鈕 (跳關 / 慢慢來) */
+        .sub-btn {
+            background: transparent;
+            border: 1px solid rgba(212, 175, 55, 0.35);
+            color: rgba(212, 175, 55, 0.75);
+            padding: 6px 16px;
+            border-radius: 16px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            font-family: inherit;
+            cursor: pointer;
+            margin-top: 4px;
+            transition: background 0.2s, color 0.2s;
+        }
+        .sub-btn:active { background: rgba(212, 175, 55, 0.1); color: var(--gold-bright); }
+        .sub-btn.hidden { display: none; }
+
+        /* ===== 彈窗 ===== */
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.92);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 20px;
+            animation: fadeIn 0.4s ease-out;
+        }
+        .overlay.show { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .gate-box {
+            padding: 32px 28px;
+            border: 1px solid var(--gold-soft);
+            background:
+                linear-gradient(135deg, rgba(40, 20, 30, 0.6), rgba(20, 10, 20, 0.6)),
+                #0d0a0d;
+            border-radius: 20px;
+            width: 100%;
+            max-width: 380px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(212, 175, 55, 0.08);
+            animation: gateRise 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        @keyframes gateRise {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .gate-box h2, .gate-box h3 {
+            color: var(--gold);
+            font-weight: 600;
+            letter-spacing: 4px;
+            margin: 0 0 18px;
+            text-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
+        }
+        .gate-box p, .gate-box .info-text {
+            color: #ccc;
+            font-size: 14px;
+            line-height: 1.9;
+            margin-bottom: 22px;
+        }
+        .gate-box .info-text {
+            text-align: left;
+            font-size: 13.5px;
+        }
+        .gate-box .info-text b {
+            color: var(--gold-bright);
+            letter-spacing: 2px;
+        }
+
+        .modal-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+        .modal-buttons .btn { min-width: 200px; }
+        .modal-buttons .btn.btn-secondary {
+            background: transparent;
+            color: var(--gold);
+            border: 1px solid var(--gold-soft);
+            box-shadow: none;
+        }
+
+        /* ===== 過場詩 ===== */
+        #transition-overlay {
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(ellipse at center, #1a0a14 0%, #000 80%);
+            z-index: 2000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+        }
+        #transition-overlay.show { display: flex; opacity: 1; }
+        .poem {
+            font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif;
+            font-size: 26px;
+            color: var(--gold-bright);
+            letter-spacing: 12px;
+            writing-mode: vertical-rl;
+            opacity: 0;
+            transition: opacity 1.2s ease;
+            line-height: 1.7;
+            text-shadow:
+                0 0 20px rgba(212, 175, 55, 0.4),
+                0 0 40px rgba(212, 175, 55, 0.2);
+            padding-left: 8px;
+        }
+        .poem.show { opacity: 1; }
+
+        /* ===== 通用 ===== */
+        .ad-link {
+            color: var(--gold-bright);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+        .small-note {
+            font-size: 12px;
+            color: #888;
+            margin-top: 12px;
+        }
+
+        /* ===== 通知條 (進度提示等) ===== */
+        .toast {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-20px);
+            background: rgba(20, 16, 20, 0.95);
+            border: 1px solid var(--gold-soft);
+            color: var(--gold-bright);
+            padding: 10px 22px;
+            border-radius: 22px;
+            font-size: 13px;
+            letter-spacing: 3px;
+            padding-left: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s, transform 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            z-index: 700;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+        }
+        .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+        @media (max-height: 700px) {
+            #stage-header { font-size: 15px; }
+            .controls-layer { min-height: 110px; }
+            .btn { padding: 11px 26px; font-size: 15px; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- 工具列 -->
     <div class="top-tools">
-        <div class="tool-btn" onclick="showInfo()">&#x2139;&#xFE0E;</div>
-        <div id="mute-btn" class="tool-btn" onclick="toggleMute()">&#x1F514;&#xFE0E;</div>
+        <div class="tool-btn" onclick="UI.showInfo()" aria-label="說明">&#x2139;&#xFE0E;</div>
+        <div id="mute-btn" class="tool-btn" onclick="Game.toggleMute()" aria-label="靜音">&#x1F514;&#xFE0E;</div>
     </div>
 
-    <div id="stage-header">第一章 試探春心</div>
+    <!-- 章節標題 + 進度 -->
+    <div class="header-wrap">
+        <div id="stage-header">第一章 試探春心</div>
+        <div id="stage-progress"></div>
+    </div>
 
-    <div class="card-container" onclick="handleFlip()">
+    <!-- 卡牌 -->
+    <div class="card-container" onclick="Game.handleFlip()">
         <div id="card-obj" class="card">
             <div id="card-front" class="face face-front"></div>
             <div id="card-back" class="face face-back"></div>
         </div>
     </div>
 
+    <!-- 控制區 -->
     <div class="controls-layer">
         <div id="dice-text"></div>
         <div id="action-area" style="display:none;">
-            <button id="action-btn" class="btn" onclick="handleAction(event)">
+            <button id="action-btn" class="btn" onclick="Game.handleAction(event)">
                 <div id="btn-progress" class="btn-progress"></div>
                 <span id="btn-label"></span>
             </button>
         </div>
-        <button id="skip-btn" onclick="forceNextStage(event)">慾火已燃，進入下一章</button>
+        <button id="speedup-btn" class="sub-btn hidden" onclick="Game.requestSpeedup(event)">迫不及待坦誠相見?</button>
+        <button id="skip-btn" class="sub-btn hidden" onclick="Game.forceNextStage(event)">慾火已燃,進入下一章</button>
     </div>
 
-    <div id="age-gate" class="overlay">
+    <!-- 18+ 同意 -->
+    <div id="age-gate" class="overlay show">
         <div class="gate-box">
-            <h2 style="color:var(--gold);">春閨戲密圖</h2>
-            <p style="color:#ccc; font-size: 14px; margin-bottom: 25px;">本遊戲包含成人文案內容與肢體指令，<br>僅供成年伴侶情趣互動使用。<br>進入前請確認您已年滿 18 歲。</p>
-            <button class="btn" onclick="acceptAge()">我已滿 18 歲</button>
-        </div>
-    </div>
-    <div id="info-overlay" class="overlay" style="display:none;" onclick="this.style.display='none'">
-        <div class="gate-box">
-            <h3 style="color:var(--gold);">遊玩指南</h3>
-            <p style="text-align:left; font-size:14px; color:#ccc; line-height: 2;">
-            <div class="info-text">
-                <b>第一章 試探春心</b><br>甜蜜互動並漸漸褪去衣衫，累積7次脫衣或10抽後進入下一章。<br><br>
-                <b>第二章 帳暖春風</b><br>裸體前戲，包含隨機「春宮密令」挑戰與「羞恥禁令」懲罰。共14+6抽。<br><br>
-                <b>第三章 雲雨交歡</b><br>體位與性愛指令，完成7抽後由「隨君所欲」劃下完美句點。
+            <h2>春閨戲密圖</h2>
+            <p>本遊戲包含成人文案與肢體指令,<br>僅供成年伴侶情趣互動使用。<br>進入前請確認您已年滿 18 歲。</p>
+            <div class="modal-buttons">
+                <button class="btn" onclick="Game.acceptAge()">我已滿 18 歲</button>
             </div>
-            </p>
-            <button class="btn" onclick="document.getElementById('info-overlay').style.display='none'">了解</button>
         </div>
     </div>
 
-    <div id="game-overlay" class="overlay" style="display:none;">
-        <div id="overlay-msg" style="color:var(--gold); margin-bottom:25px; font-size: 20px;"></div>
-        <div id="overlay-btns" style="display:flex; flex-direction:column; gap:15px; align-items:center;"></div>
+    <!-- 遊玩說明 -->
+    <div id="info-overlay" class="overlay" onclick="if(event.target===this)UI.hideInfo()">
+        <div class="gate-box">
+            <h3>遊玩指南</h3>
+            <div class="info-text">
+                <b>第一章 試探春心</b><br>
+                甜蜜互動並漸漸褪去衣衫,累積 7 次脫衣後進入下一章。<br>
+                <span style="color:#999;font-size:12.5px;">機率設計成漸進升溫,愈到後面愈容易脫衣。第 6 抽後可隨時選擇加速。</span><br><br>
+                <b>第二章 帳暖春風</b><br>
+                裸體前戲,共 14 抽,穿插「春宮密令」與「羞恥禁令」。<br>
+                <span style="color:#999;font-size:12.5px;">完成後可選擇加抽 6 張延長。第 10 抽後可隨時提前進入下一章。</span><br><br>
+                <b>第三章 雲雨交歡</b><br>
+                7 張體位指令,部分卡牌會觸發羞恥禁令增添情趣,<br>由「隨君所欲」劃下完美句點。
+            </div>
+            <div class="modal-buttons">
+                <button class="btn" onclick="UI.hideInfo()">了解</button>
+            </div>
+        </div>
     </div>
 
-    <div id="transition-overlay"><div id="poem-text" class="poem"></div></div>
+    <!-- 通用模態 -->
+    <div id="game-overlay" class="overlay">
+        <div class="gate-box">
+            <div id="overlay-msg" style="color:var(--gold);margin-bottom:22px;font-size:18px;letter-spacing:2px;line-height:1.8;"></div>
+            <div id="overlay-btns" class="modal-buttons"></div>
+        </div>
+    </div>
+
+    <!-- 過場詩 -->
+    <div id="transition-overlay">
+        <div id="poem-text" class="poem"></div>
+    </div>
+
+    <!-- 通知條 -->
+    <div id="toast" class="toast"></div>
 
     <script>
-        const ext = 'png';
-        const timerAudio = new Audio('timer-end.mp3');
-        const flipAudio = new Audio('card-flip.mp3');
-        const diceData = { 1: [5, 10, 15, 20, 25, 30], 2: ["3次", "5次", "10次", "15次", "20次", "30次"] };
-        const manifest = {
-            level1: ["01-1", "02-0", "03-off-0", "04-2", "05-off-0", "06-0", "07-1", "08-2", "09-off-0", "10-1", "11-2", "12-0", "13-off-0", "14-off-0", "15-1", "16-1", "17-0", "18-last-0", "19-2", "20-off-0"],
-            level2: ["01-1", "02-1", "03-1", "04-1", "05-1", "06-2", "07-1", "08-1", "09-1", "10-2", "11-2", "12-1", "13-2", "14-2", "15-2"],
-            sexual: ["01-1", "02-s-0", "03-1", "04-m-0", "05-1", "06-1", "07-s-2", "08-1", "09-m-0", "10-1", "11-s-0", "12-over-0"],
-            mission: ["01-0", "02-0", "03-1", "04-1", "05-2", "06-2", "07-1", "08-0", "09-1", "10-1", "11-2", "12-1", "13-2", "14-1", "15-1", "16-0", "17-0", "18-1", "19-1", "20-0"],
-            shame: ["01-0", "02-0", "03-0", "04-0", "05-2", "06-0", "07-2", "08-0", "09-0", "10-1", "11-2", "12-0", "13-1", "14-0", "15-1", "16-0", "17-1", "18-1", "19-2", "20-0"]
-        };
+    // ============================================================
+    // CONFIG — 平衡參數集中管理,要調整數值都來這裡
+    // ============================================================
+    const CONFIG = {
+        ext: 'png',
+        adLink: 'https://your-ad-link.com',  // TODO: 換成真實連結
+        storageKey: '_spring_chamber_v2',
 
-        let state = { stage: 'level1', nextPool: 'level1', isFlipped: false, drawCount: 0, offCount: 0, isMuted: false, timer: null, timeLeft: 0, pools: {}, isExtraPending: false };
+        level1: {
+            offTarget: 7,                       // 7 件衣物 = 進章
+            offProbs: { early: 0.15, mid: 0.30, late: 0.50 },
+            offStage: { earlyEnd: 5, midEnd: 10 },
+            speedupAt: 6,                       // 第 N 抽後提問
+            safetyNet: {                        // 第 11/12/13 抽強制春衫盡褪 (對應 drawCount 10/11/12)
+                start: 10,
+                probs: { 10: 0.33, 11: 0.50, 12: 1.0 }
+            },
+            transitionPoem: '雲想衣裳花想容<br>春風拂檻露華濃'
+        },
 
-        function acceptAge() {
-            [timerAudio, flipAudio].forEach(a => { a.play().then(()=>a.pause()).catch(()=>{}) });
-            document.getElementById('age-gate').style.display = 'none';
-            initGame();
+        level2: {
+            totalDraws: 14,
+            extensionDraws: 6,
+            skipButtonAt: 10,
+            extraProbs: { mission: 0.25, shame: 0.25 },  // 主線 = 1 - 0.5 = 0.5
+            transitionPoem: '金風玉露一相逢<br>便勝卻人間無數'
+        },
+
+        sexual: {
+            mainDraws: 7,
+            // s/m 卡的自動觸發行為
+            chainOnSuffix: {
+                s: { type: 'shame',   count: 1, modifier: null },
+                m: { type: 'mission', count: 2, modifier: 'doubleTime' }
+            }
+        },
+
+        dice: {
+            1: [5, 10, 15, 20, 25, 30],            // 秒
+            2: ['3次', '5次', '10次', '15次', '20次', '30次']
+        },
+
+        audio: {
+            flip: 'card-flip.mp3',
+            timer: 'timer-end.mp3'
+        },
+
+        transition: {
+            poemHoldMs: 2800,
+            fadeMs: 1000
         }
+    };
 
-        function initGame() {
-            Object.keys(manifest).forEach(k => { state.pools[k] = [...manifest[k]].filter(f => !f.includes('last') && !f.includes('over')); });
-            updateHeader();
-            document.getElementById('card-back').style.backgroundImage = `url('level1-cover.${ext}')`;
+    // ============================================================
+    // MANIFEST — 牌池內容
+    // ============================================================
+    const MANIFEST = {
+        level1: {
+            main: ['01-1', '02-0', '04-2', '06-0', '07-1', '08-2', '10-1', '11-2', '12-0', '15-1', '16-1', '17-0', '19-2'],
+            off: ['03-off-0', '05-off-0', '09-off-0', '13-off-0', '14-off-0', '20-off-0'],
+            last: '18-last-0'
+        },
+        level2: ['01-1', '02-1', '03-1', '04-1', '05-1', '06-2', '07-1', '08-1', '09-1', '10-2', '11-2', '12-1', '13-2', '14-2', '15-2'],
+        sexual: {
+            main: ['01-1', '03-1', '05-1', '06-1', '08-1', '10-1'],
+            s: ['02-s-0', '07-s-2', '11-s-0'],
+            m: ['04-m-0', '09-m-0'],
+            over: '12-over-0'
+        },
+        mission: ['01-0', '02-0', '03-1', '04-1', '05-2', '06-2', '07-1', '08-0', '09-1', '10-1', '11-2', '12-1', '13-2', '14-1', '15-1', '16-0', '17-0', '18-1', '19-1', '20-0'],
+        shame:   ['01-0', '02-0', '03-0', '04-0', '05-2', '06-0', '07-2', '08-0', '09-0', '10-1', '11-2', '12-0', '13-1', '14-0', '15-1', '16-0', '17-1', '18-1', '19-2', '20-0']
+    };
+
+    const STAGE_TITLES = {
+        level1:  '第一章 試探春心',
+        level2:  '第二章 帳暖春風',
+        sexual:  '第三章 雲雨交歡',
+        mission: '春宮密令',
+        shame:   '羞恥禁令'
+    };
+
+    // ============================================================
+    // STATE
+    // ============================================================
+    const state = {
+        stage: 'level1',         // level1 | level2 | sexual
+        drawCount: 0,            // 章節內已抽張數(包含主線+附加)
+        offCount: 0,             // 第一章已脫衣件數
+        mainCount: 0,            // 章節內主線張數(顯示用)
+        isFlipped: false,
+        isMuted: false,
+        timer: null,
+        timeLeft: 0,
+        pools: {},
+        lastCardUsed: false,
+        overCardUsed: false,
+        l2Extended: false,       // 第二章是否已加抽
+        speedupAsked: false,     // 第一章是否已彈過加速詢問
+        slowMode: false,         // 第一章玩家選了慢慢來
+        chain: null,             // 第三章 s/m 觸發鏈: { type, remaining, modifier, returnTo }
+        currentDraw: null,       // { category, file, type, modifier }
+        actionPhase: 'idle'      // idle | revealed | rolled | timing | done
+    };
+
+    // ============================================================
+    // AUDIO
+    // ============================================================
+    const Audio_ = {
+        flip: null,
+        timer: null,
+        init() {
+            this.flip = new Audio(CONFIG.audio.flip);
+            this.timer = new Audio(CONFIG.audio.timer);
+            // 暖機,讓 iOS 在使用者首次互動後能播放
+            [this.flip, this.timer].forEach(a => {
+                a.play().then(() => a.pause()).catch(() => {});
+            });
+        },
+        play(name) {
+            if (state.isMuted || !this[name]) return;
+            try { this[name].currentTime = 0; this[name].play().catch(() => {}); } catch (e) {}
         }
+    };
 
-        function toggleMute() {
-            state.isMuted = !state.isMuted;
-            document.getElementById('mute-btn').innerHTML = state.isMuted ? "&#x1F515;&#xFE0E;" : "&#x1F514;&#xFE0E;";
+    // ============================================================
+    // POOL UTILS
+    // ============================================================
+    const Pool = {
+        init() {
+            state.pools = {
+                level1: {
+                    main: [...MANIFEST.level1.main],
+                    off:  [...MANIFEST.level1.off]
+                },
+                level2:  [...MANIFEST.level2],
+                sexual: {
+                    main: [...MANIFEST.sexual.main],
+                    s:    [...MANIFEST.sexual.s],
+                    m:    [...MANIFEST.sexual.m]
+                },
+                mission: [...MANIFEST.mission],
+                shame:   [...MANIFEST.shame]
+            };
+        },
+        // 從牌池抽一張,抽光自動回填(避免崩潰)
+        draw(category, subKey) {
+            let pool;
+            if (subKey) {
+                pool = state.pools[category][subKey];
+                if (!pool || pool.length === 0) {
+                    state.pools[category][subKey] = [...MANIFEST[category][subKey]];
+                    pool = state.pools[category][subKey];
+                }
+            } else {
+                pool = state.pools[category];
+                if (!pool || pool.length === 0) {
+                    state.pools[category] = [...MANIFEST[category]];
+                    pool = state.pools[category];
+                }
+            }
+            if (pool.length === 0) return null;
+            const idx = Math.floor(Math.random() * pool.length);
+            return pool.splice(idx, 1)[0];
         }
+    };
 
-        function handleFlip() {
-            if (state.isFlipped) return;
+    // ============================================================
+    // CARD PICKER — 各章節抽卡策略
+    // ============================================================
+    const Picker = {
+        // 第一章: 漸進機率 + 春衫盡褪保底
+        level1() {
+            const { drawCount, offCount, lastCardUsed } = state;
 
-            // 挑戰卡判定
-            if (state.stage === 'level2' && state.nextPool === 'level2' && !state.isExtraPending) {
-                if (Math.random() < 0.25) {
-                    state.isExtraPending = true;
-                    const target = Math.random() < 0.5 ? 'mission' : 'shame';
-                    triggerExtra(target, target==='mission'?'🔥 抽中：春宮密令':'😳 抽中：羞恥禁令', '接受挑戰');
-                    return;
+            // [保底] 第 11~13 抽未達 7 件 → 機率性 / 強制春衫盡褪
+            if (!lastCardUsed && offCount < CONFIG.level1.offTarget - 1 && drawCount >= CONFIG.level1.safetyNet.start) {
+                const safetyProb = CONFIG.level1.safetyNet.probs[drawCount] ?? 1.0;
+                if (Math.random() < safetyProb) {
+                    return Picker._useLast();
                 }
             }
 
-            if (!state.isMuted) flipAudio.play();
+            // [正常] 擲機率
+            let offProb;
+            if (drawCount < CONFIG.level1.offStage.earlyEnd) offProb = CONFIG.level1.offProbs.early;
+            else if (drawCount < CONFIG.level1.offStage.midEnd) offProb = CONFIG.level1.offProbs.mid;
+            else offProb = CONFIG.level1.offProbs.late;
 
-            let poolKey = state.nextPool;
-            let pool = state.pools[poolKey];
-            const idx = Math.floor(Math.random() * pool.length);
-            const cardData = pool.splice(idx, 1)[0];
-            state.currentCard = { key: poolKey, info: cardData };
-            
+            const rollOff = Math.random() < offProb;
+
+            if (rollOff) {
+                // 已有 6 件正規脫衣 → 下一張 off 就是春衫盡褪 (第 7 件)
+                if (offCount >= CONFIG.level1.offTarget - 1) {
+                    return Picker._useLast();
+                }
+                const file = Pool.draw('level1', 'off');
+                return file ? { category: 'level1', file: `level1-${file}`, isOff: true } : Picker._useLast();
+            } else {
+                const file = Pool.draw('level1', 'main');
+                if (file) return { category: 'level1', file: `level1-${file}` };
+                // 主線抽光的極端情況 → 補一張 off 撐場
+                if (offCount < CONFIG.level1.offTarget - 1) {
+                    const off = Pool.draw('level1', 'off');
+                    if (off) return { category: 'level1', file: `level1-${off}`, isOff: true };
+                }
+                return Picker._useLast();
+            }
+        },
+        _useLast() {
+            state.lastCardUsed = true;
+            return { category: 'level1', file: `level1-${MANIFEST.level1.last}`, isOff: true, isLast: true };
+        },
+
+        // 第二章: 50% 主線 / 25% 密令 / 25% 禁令
+        level2() {
+            const r = Math.random();
+            const { mission, shame } = CONFIG.level2.extraProbs;
+
+            if (r < mission) {
+                const file = Pool.draw('mission');
+                return { category: 'mission', file: `mission-${file}` };
+            } else if (r < mission + shame) {
+                const file = Pool.draw('shame');
+                return { category: 'shame', file: `shame-${file}` };
+            } else {
+                const file = Pool.draw('level2');
+                return { category: 'level2', file: `level2-${file}`, isMain: true };
+            }
+        },
+
+        // 第三章: 主線抽完 → 隨君所欲; s/m 卡走 chain
+        sexual() {
+            // 觸發鏈進行中: 抽自指定牌池
+            if (state.chain) {
+                const c = state.chain;
+                const file = Pool.draw(c.type);
+                return {
+                    category: c.type,
+                    file: `${c.type}-${file}`,
+                    chainModifier: c.modifier
+                };
+            }
+
+            // 主線完成 7 抽 → 結束卡
+            if (state.mainCount >= CONFIG.sexual.mainDraws && !state.overCardUsed) {
+                state.overCardUsed = true;
+                return { category: 'sexual', file: `sexual-${MANIFEST.sexual.over}`, isOver: true };
+            }
+
+            // 從主線 / s / m 三池隨機挑
+            // 為了讓 s/m 在 7 抽中有合理出現率,我們做加權抽樣
+            const subKeys = ['main', 's', 'm'];
+            const weighted = [];
+            subKeys.forEach(k => {
+                const pool = state.pools.sexual[k];
+                if (pool.length > 0) {
+                    pool.forEach(card => weighted.push({ subKey: k, card }));
+                }
+            });
+            if (weighted.length === 0) {
+                state.overCardUsed = true;
+                return { category: 'sexual', file: `sexual-${MANIFEST.sexual.over}`, isOver: true };
+            }
+            const pick = weighted[Math.floor(Math.random() * weighted.length)];
+            // 從原池中移除
+            const realPool = state.pools.sexual[pick.subKey];
+            realPool.splice(realPool.indexOf(pick.card), 1);
+
+            const result = {
+                category: 'sexual',
+                file: `sexual-${pick.card}`,
+                subKey: pick.subKey,
+                isMain: pick.subKey === 'main' || pick.subKey === 's' || pick.subKey === 'm'  // 都計入 7 抽
+            };
+            // 若 s 或 m,觸發鏈
+            if (CONFIG.sexual.chainOnSuffix[pick.subKey]) {
+                result.triggersChain = pick.subKey;
+            }
+            return result;
+        }
+    };
+
+    // ============================================================
+    // GAME LOGIC
+    // ============================================================
+    const Game = {
+        acceptAge() {
+            try { localStorage.setItem(CONFIG.storageKey + '_age', '1'); } catch (e) {}
+            Audio_.init();
+            document.getElementById('age-gate').classList.remove('show');
+            Game.start();
+        },
+
+        start() {
+            Pool.init();
+            // 預載入封面與第一張可能會見到的卡(避免首次翻牌空白)
+            Game._preloadCover('level1');
+            Game._preloadCover('level2');
+            Game._preloadCover('sexual');
+            Game._preloadCover('mission');
+            Game._preloadCover('shame');
+
+            UI.setCardBack(`level1-cover.${CONFIG.ext}`);
+            UI.updateHeader();
+            UI.updateProgress();
+        },
+
+        toggleMute() {
+            state.isMuted = !state.isMuted;
+            document.getElementById('mute-btn').innerHTML = state.isMuted ? '&#x1F515;&#xFE0E;' : '&#x1F514;&#xFE0E;';
+        },
+
+        // ===== 翻牌 =====
+        handleFlip() {
+            if (state.isFlipped || state.actionPhase !== 'idle') return;
+
+            // 各章節抽卡
+            let result;
+            if (state.stage === 'level1') result = Picker.level1();
+            else if (state.stage === 'level2') result = Picker.level2();
+            else result = Picker.sexual();
+
+            if (!result) return;
+            state.currentDraw = result;
+
+            Audio_.play('flip');
+
+            // 更新計數
             state.drawCount++;
-            if (cardData.includes('off')) state.offCount++;
+            if (result.isOff) state.offCount++;
+            // 主線計數 (僅第三章用於 7/7 進度顯示)
+            if (state.stage === 'sexual' && !result.chainModifier && !result.isOver) {
+                state.mainCount++;
+            }
 
-            document.getElementById('card-front').style.backgroundImage = `url('${poolKey}-${cardData}.${ext}')`;
+            // 卡面圖
+            const filename = `${result.file}.${CONFIG.ext}`;
+            UI.setCardFront(filename);
+
+            // 翻牌動畫
             document.getElementById('card-obj').classList.add('is-flipped');
             state.isFlipped = true;
+            state.actionPhase = 'revealed';
 
+            // 顯示動作區
             setTimeout(() => {
                 document.getElementById('action-area').style.display = 'block';
-                const type = cardData.split('-').pop();
-                updateBtnLabel(type === '0' ? "完成任務" : "點擊擲骰");
-                if (state.stage === 'level2' && state.drawCount >= 10) document.getElementById('skip-btn').style.display = 'block';
-            }, 600);
-        }
+                const type = Game._cardType(result.file);
+                if (type === '0') {
+                    UI.setBtnLabel('完成任務');
+                } else {
+                    UI.setBtnLabel('點擊擲骰');
+                }
+                UI.updateProgress();
+                Game._maybeShowSubButtons();
+            }, 650);
+        },
 
-        function handleAction(e) {
+        _cardType(file) {
+            // file 形如 'level1-04-2',取最後一段
+            return file.split('-').pop();
+        },
+
+        _maybeShowSubButtons() {
+            // 第一章: 第 speedupAt 抽完才彈一次,之後保留小按鈕
+            if (state.stage === 'level1') {
+                if (state.drawCount === CONFIG.level1.speedupAt && !state.speedupAsked) {
+                    // 等任務完成才問,不在翻牌就打斷
+                    // 這裡 mark 待完成後問
+                    state._pendingSpeedupAsk = true;
+                }
+                if (state.slowMode) {
+                    UI.showSubButton('speedup-btn');
+                }
+            }
+
+            // 第二章: 第 10 抽起顯示提前結束
+            if (state.stage === 'level2' && state.drawCount >= CONFIG.level2.skipButtonAt) {
+                UI.showSubButton('skip-btn');
+            }
+        },
+
+        // ===== 動作按鈕 =====
+        handleAction(e) {
             e.stopPropagation();
-            if (state.timer) { stopTimer(); return; } // 計時中點擊可停止
+            // 計時中再點 = 停止
+            if (state.timer) {
+                Game._stopTimer();
+                return;
+            }
 
             const label = document.getElementById('btn-label').innerText;
-            const type = state.currentCard.info.split('-').pop();
+            const type = Game._cardType(state.currentDraw.file);
 
-            if (label === "點擊擲骰") {
-                const res = diceData[type][Math.floor(Math.random() * 6)];
-                document.getElementById('dice-text').innerText = (type === '1' ? res + " 秒" : res);
-                if (type === '1') {
-                    state.timeLeft = parseInt(res);
-                    updateBtnLabel("開始計時");
-                } else {
-                    updateBtnLabel("完成任務");
-                }
-            } else if (label === "開始計時") {
-                startTimer();
+            if (label === '點擊擲骰') {
+                Game._rollDice(type);
+            } else if (label === '開始計時') {
+                Game._startTimer();
             } else {
-                checkGameProgress();
+                Game._completeCard();
             }
-        }
+        },
 
-        function startTimer() {
+        _rollDice(type) {
+            const values = CONFIG.dice[type];
+            let res = values[Math.floor(Math.random() * values.length)];
+
+            // m 鏈倍增時間
+            if (type === '1' && state.chain && state.chain.modifier === 'doubleTime') {
+                res = res * 2;
+            }
+
+            const display = (type === '1') ? `${res} 秒` : res;
+            const diceEl = document.getElementById('dice-text');
+            diceEl.classList.remove('show');
+            diceEl.innerText = display;
+            // 強制 reflow 觸發 animation
+            void diceEl.offsetWidth;
+            diceEl.classList.add('show');
+
+            if (type === '1') {
+                state.timeLeft = res;
+                UI.setBtnLabel('開始計時');
+            } else {
+                UI.setBtnLabel('完成任務');
+            }
+            state.actionPhase = 'rolled';
+        },
+
+        _startTimer() {
             const btn = document.getElementById('action-btn');
             const progress = document.getElementById('btn-progress');
             btn.classList.add('counting');
-            
+
             const total = state.timeLeft;
             progress.style.transition = 'none';
             progress.style.width = '0%';
-            
             setTimeout(() => {
                 progress.style.transition = `width ${total}s linear`;
                 progress.style.width = '100%';
             }, 50);
 
+            UI.setBtnLabel(`剩餘 ${state.timeLeft} 秒`);
+            state.actionPhase = 'timing';
+
             state.timer = setInterval(() => {
                 state.timeLeft--;
-                updateBtnLabel(`剩餘 ${state.timeLeft} 秒`);
-                if (state.timeLeft <= 0) {
-                    stopTimer();
-                    if (!state.isMuted) timerAudio.play();
+                if (state.timeLeft > 0) {
+                    UI.setBtnLabel(`剩餘 ${state.timeLeft} 秒`);
+                } else {
+                    Game._stopTimer();
+                    Audio_.play('timer');
                 }
             }, 1000);
-        }
+        },
 
-        function stopTimer() {
+        _stopTimer() {
             clearInterval(state.timer);
             state.timer = null;
             document.getElementById('action-btn').classList.remove('counting');
-            updateBtnLabel("完成任務");
-        }
+            UI.setBtnLabel('完成任務');
+            state.actionPhase = 'done';
+        },
 
-        function triggerExtra(target, title, btnText) {
-            showOverlay(title, [{ text: btnText, action: () => {
-                state.nextPool = target; 
-                document.getElementById('card-back').style.backgroundImage = `url('${target}-cover.${ext}')`;
-                hideOverlay();
-            }}]);
-        }
+        _completeCard() {
+            // 第一章: 抽到春衫盡褪 → 進章
+            if (state.currentDraw.isLast) {
+                return Game._enterStage('level2');
+            }
 
-        function checkGameProgress() {
-            if (state.stage === 'level1' && (state.offCount >= 7 || state.drawCount >= 12)) {
-                return playTransition("雲想衣裳花想容，<br>春風拂檻露華濃。", "level2");
+            // 第一章: 累積 7 件 → 進章 (理論上由春衫盡褪扳機,但保險)
+            if (state.stage === 'level1' && state.offCount >= CONFIG.level1.offTarget) {
+                return Game._enterStage('level2');
             }
-            if (state.stage === 'level2' && state.drawCount >= 14 && !state.isL2Extended) {
-                return showOverlay("情慾已然沸騰...", [
-                    { text: "進入雲雨交歡", action: () => playTransition("金風玉露一相逢，<br>便勝卻人間無數。", "sexual") },
-                    { text: "意猶未盡(+6抽)", action: () => { state.isL2Extended = true; resetCard(); } }
-                ]);
-            }
-             if (state.stage === 'sexual' && state.drawCount >= 7) {
-                const finalMsg = "纏綿悱惻，春光無限<br><small>盡情沉醉於交歡之樂</small><br><br><span style='font-size:14px; color:#888;'>為下次的美好時光做準備？</span><br><a href='https://your-ad-link.com' class='ad-link' target='_blank'>查看 Blanc 精選情趣選物</a>";
-                return showOverlay(finalMsg, [{ text: "良宵再續 (重新開始)", action: () => location.reload() }]);
-            }
-            resetCard();
-        }
 
-        function resetCard() {
+            // 第三章: 抽到隨君所欲 → 結束遊戲
+            if (state.currentDraw.isOver) {
+                return Game._gameOver();
+            }
+
+            // 第三章: s/m 卡完成 → 啟動觸發鏈
+            if (state.stage === 'sexual' && state.currentDraw.triggersChain) {
+                const cfg = CONFIG.sexual.chainOnSuffix[state.currentDraw.triggersChain];
+                state.chain = {
+                    type: cfg.type,
+                    remaining: cfg.count,
+                    modifier: cfg.modifier,
+                    total: cfg.count
+                };
+                const hint = cfg.count > 1 ? `${STAGE_TITLES[cfg.type]} (共 ${cfg.count} 抽)` : STAGE_TITLES[cfg.type];
+                UI.toast(hint);
+                return Game._resetCard();
+            }
+
+            // 在觸發鏈中: 一張完成,進入下一張或回主線
+            if (state.chain) {
+                state.chain.remaining--;
+                if (state.chain.remaining <= 0) {
+                    const justEnded = state.chain.type;
+                    state.chain = null;
+                    UI.toast('回到雲雨交歡');
+                }
+                return Game._resetCard();
+            }
+
+            // 第一章第 6 抽完成: 彈一次加速詢問
+            if (state._pendingSpeedupAsk) {
+                state._pendingSpeedupAsk = false;
+                state.speedupAsked = true;
+                return Game._askSpeedup();
+            }
+
+            // 第二章 14 抽完成
+            if (state.stage === 'level2' && state.drawCount >= CONFIG.level2.totalDraws && !state.l2Extended) {
+                return Game._askExtendL2();
+            }
+            // 第二章 14+6 抽完成 → 強制進章
+            if (state.stage === 'level2' && state.l2Extended && state.drawCount >= CONFIG.level2.totalDraws + CONFIG.level2.extensionDraws) {
+                return Game._enterStage('sexual');
+            }
+
+            // 一般情況: 重置卡牌等待下一抽
+            Game._resetCard();
+        },
+
+        _askSpeedup() {
+            UI.showModal('心已動,身亦躁?', [
+                {
+                    text: '迫不及待坦誠相見',
+                    action: () => {
+                        UI.hideModal();
+                        Game._enterStage('level2');
+                    }
+                },
+                {
+                    text: '我們想慢慢來',
+                    secondary: true,
+                    action: () => {
+                        state.slowMode = true;
+                        UI.hideModal();
+                        UI.showSubButton('speedup-btn');
+                        Game._resetCard();
+                    }
+                }
+            ]);
+        },
+
+        requestSpeedup(e) {
+            e.stopPropagation();
+            UI.showModal('確認進入下一章?', [
+                { text: '是,進入第二章', action: () => { UI.hideModal(); Game._enterStage('level2'); } },
+                { text: '取消', secondary: true, action: () => UI.hideModal() }
+            ]);
+        },
+
+        forceNextStage(e) {
+            e.stopPropagation();
+            const next = state.stage === 'level1' ? 'level2' : 'sexual';
+            UI.showModal('確認進入下一章?', [
+                { text: '是,繼續', action: () => { UI.hideModal(); Game._enterStage(next); } },
+                { text: '取消', secondary: true, action: () => UI.hideModal() }
+            ]);
+        },
+
+        _askExtendL2() {
+            UI.showModal('情慾已然沸騰...', [
+                {
+                    text: '進入雲雨交歡',
+                    action: () => { UI.hideModal(); Game._enterStage('sexual'); }
+                },
+                {
+                    text: '意猶未盡 (+6 抽)',
+                    secondary: true,
+                    action: () => {
+                        state.l2Extended = true;
+                        UI.hideModal();
+                        Game._resetCard();
+                    }
+                }
+            ]);
+        },
+
+        _resetCard() {
             document.getElementById('card-obj').classList.remove('is-flipped');
             document.getElementById('action-area').style.display = 'none';
             document.getElementById('btn-progress').style.width = '0%';
+            document.getElementById('btn-progress').style.transition = 'none';
             document.getElementById('dice-text').innerText = '';
+            document.getElementById('dice-text').classList.remove('show');
             state.isFlipped = false;
-            state.isExtraPending = false;
-            hideOverlay();
-            
-            setTimeout(() => {
-                if (state.nextPool === 'mission' || state.nextPool === 'shame') state.nextPool = state.stage;
-                document.getElementById('card-back').style.backgroundImage = `url('${state.nextPool}-cover.${ext}')`;
-            }, 300);
-        }
+            state.actionPhase = 'idle';
 
-        function playTransition(text, nextStage) {
+            // 切換卡背圖 (要等翻回去後再換,避免穿幫)
+            setTimeout(() => {
+                let backStage;
+                if (state.chain) backStage = state.chain.type;
+                else if (state.stage === 'level1') backStage = 'level1';
+                else if (state.stage === 'level2') backStage = 'level2';
+                else backStage = 'sexual';
+                UI.setCardBack(`${backStage}-cover.${CONFIG.ext}`);
+            }, 350);
+
+            UI.updateProgress();
+        },
+
+        _enterStage(next) {
+            const poem = next === 'level2' ? CONFIG.level1.transitionPoem : CONFIG.level2.transitionPoem;
+            UI.playTransition(poem, () => {
+                state.stage = next;
+                state.drawCount = 0;
+                state.offCount = 0;
+                state.mainCount = 0;
+                state.chain = null;
+                state.l2Extended = false;
+                UI.hideSubButton('speedup-btn');
+                UI.hideSubButton('skip-btn');
+                UI.updateHeader();
+                Game._resetCard();
+            });
+        },
+
+        _gameOver() {
+            const msg = `
+                <div style="font-size:22px;letter-spacing:6px;margin-bottom:10px;">纏綿悱惻,春光無限</div>
+                <div style="font-size:14px;color:#aaa;letter-spacing:2px;">盡情沉醉於交歡之樂</div>
+                <div style="margin-top:24px;font-size:13px;color:#888;">為下次的美好時光做準備?</div>
+                <a href="${CONFIG.adLink}" class="ad-link" target="_blank" rel="noopener">查看 Blanc 精選情趣選物</a>
+            `;
+            UI.showModal(msg, [
+                { text: '良宵再續', action: () => location.reload() }
+            ]);
+        },
+
+        _preloadCover(stage) {
+            const img = new Image();
+            img.src = `${stage}-cover.${CONFIG.ext}`;
+        }
+    };
+
+    // ============================================================
+    // UI HELPERS
+    // ============================================================
+    const UI = {
+        setCardFront(src) {
+            document.getElementById('card-front').style.backgroundImage = `url('${src}')`;
+        },
+        setCardBack(src) {
+            document.getElementById('card-back').style.backgroundImage = `url('${src}')`;
+        },
+        setBtnLabel(txt) {
+            document.getElementById('btn-label').innerText = txt;
+        },
+        updateHeader() {
+            const el = document.getElementById('stage-header');
+            el.style.opacity = 0;
+            setTimeout(() => {
+                el.innerText = STAGE_TITLES[state.stage];
+                el.style.opacity = 1;
+            }, 300);
+        },
+        updateProgress() {
+            const el = document.getElementById('stage-progress');
+            let text = '';
+            if (state.chain) {
+                const current = state.chain.total - state.chain.remaining + 1;
+                if (state.chain.total === 1) {
+                    text = STAGE_TITLES[state.chain.type];
+                } else {
+                    text = `${STAGE_TITLES[state.chain.type]} ${current}/${state.chain.total}`;
+                }
+            } else if (state.stage === 'level1') {
+                text = `脫衣 ${state.offCount}/${CONFIG.level1.offTarget}`;
+            } else if (state.stage === 'level2') {
+                const total = state.l2Extended ? CONFIG.level2.totalDraws + CONFIG.level2.extensionDraws : CONFIG.level2.totalDraws;
+                text = `${state.drawCount}/${total}`;
+            } else if (state.stage === 'sexual') {
+                text = `${state.mainCount}/${CONFIG.sexual.mainDraws}`;
+            }
+            el.innerText = text;
+        },
+        showSubButton(id) {
+            document.getElementById(id).classList.remove('hidden');
+        },
+        hideSubButton(id) {
+            document.getElementById(id).classList.add('hidden');
+        },
+        showModal(msgHtml, btns) {
+            const o = document.getElementById('game-overlay');
+            document.getElementById('overlay-msg').innerHTML = msgHtml;
+            const c = document.getElementById('overlay-btns');
+            c.innerHTML = '';
+            btns.forEach(b => {
+                const el = document.createElement('button');
+                el.className = 'btn' + (b.secondary ? ' btn-secondary' : '');
+                el.innerText = b.text;
+                el.onclick = b.action;
+                c.appendChild(el);
+            });
+            o.classList.add('show');
+        },
+        hideModal() {
+            document.getElementById('game-overlay').classList.remove('show');
+        },
+        showInfo() {
+            document.getElementById('info-overlay').classList.add('show');
+        },
+        hideInfo() {
+            document.getElementById('info-overlay').classList.remove('show');
+        },
+        playTransition(poemHtml, onMidpoint) {
             const ov = document.getElementById('transition-overlay');
             const p = document.getElementById('poem-text');
-            ov.style.display = 'flex';
-            setTimeout(() => { p.innerHTML = text; p.style.opacity = 1; }, 100);
+            ov.classList.add('show');
+            // 詩淡入
             setTimeout(() => {
-                p.style.opacity = 0;
-                setTimeout(() => {
-                    ov.style.display = 'none';
-                    state.stage = nextStage; state.nextPool = nextStage;
-                    state.drawCount = 0; state.offCount = 0;
-                    updateHeader();
-                    resetCard();
-                }, 1000);
-            }, 3000);
-        }
+                p.innerHTML = poemHtml;
+                p.classList.add('show');
+            }, 200);
+            // 中段切換狀態
+            setTimeout(() => {
+                if (typeof onMidpoint === 'function') onMidpoint();
+            }, CONFIG.transition.poemHoldMs / 2);
+            // 詩淡出
+            setTimeout(() => {
+                p.classList.remove('show');
+            }, CONFIG.transition.poemHoldMs);
+            // 整層淡出
+            setTimeout(() => {
+                ov.classList.remove('show');
+                p.innerHTML = '';
+            }, CONFIG.transition.poemHoldMs + CONFIG.transition.fadeMs);
+        },
+        toast(msg) {
+            const el = document.getElementById('toast');
+            el.innerText = msg;
+            el.classList.add('show');
+            clearTimeout(UI._toastTimer);
+            UI._toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+        },
+        _toastTimer: null
+    };
 
-        function updateHeader() {
-            const titles = { 'level1': '第一章 試探春心', 'level2': '第二章 帳暖春風', 'sexual': '第三章 雲雨交歡' };
-            document.getElementById('stage-header').innerText = titles[state.stage];
-            if (state.stage === 'sexual') document.getElementById('skip-btn').style.display = 'none';
-        }
-
-        function updateBtnLabel(txt) { document.getElementById('btn-label').innerText = txt; }
-        function showOverlay(msg, btns) {
-            const o = document.getElementById('game-overlay');
-            document.getElementById('overlay-msg').innerHTML = msg;
-            const c = document.getElementById('overlay-btns'); c.innerHTML = '';
-            btns.forEach(b => {
-                const el = document.createElement('button'); el.className = 'btn'; el.innerText = b.text; el.onclick = b.action; c.appendChild(el);
-            });
-            o.style.display = 'flex';
-        }
-        function hideOverlay() { document.getElementById('game-overlay').style.display = 'none'; }
-        function showInfo() { document.getElementById('info-overlay').style.display = 'flex'; }
-        function forceNextStage(e) { e.stopPropagation(); playTransition("春情難遏...", state.stage === 'level1' ? 'level2' : 'sexual'); }
+    // ============================================================
+    // BOOT
+    // ============================================================
+    (function boot() {
+        // 18+ 持久化檢查
+        try {
+            if (localStorage.getItem(CONFIG.storageKey + '_age') === '1') {
+                document.getElementById('age-gate').classList.remove('show');
+                // 仍要等使用者點任意處才能播音(瀏覽器限制),這裡直接 init
+                Audio_.init();
+                Game.start();
+            }
+        } catch (e) {}
+    })();
     </script>
 </body>
 </html>
-
