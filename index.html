@@ -8,7 +8,7 @@
     <title>春閨戲密圖 | 古風情趣卡牌</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;600;700&family=LXGW+WenKai+TC&display=swap" rel="stylesheet">
     <style>
         :root {
             --gold: #d4af37;
@@ -306,18 +306,19 @@
         }
         #transition-overlay.show { display: flex; opacity: 1; }
         .poem {
-            font-family: 'Ma Shan Zheng', 'Noto Serif TC', serif;
-            font-size: 26px;
+            font-family: 'LXGW WenKai TC', 'Noto Serif TC', serif;
+            font-size: 27px;
+            font-weight: 400;
             color: var(--gold-bright);
-            letter-spacing: 12px;
+            letter-spacing: 14px;
             writing-mode: vertical-rl;
             opacity: 0;
-            transition: opacity 1.2s ease;
-            line-height: 1.7;
+            transition: opacity 1.4s ease;
+            line-height: 1.8;
             text-shadow:
-                0 0 20px rgba(212, 175, 55, 0.4),
+                0 0 20px rgba(212, 175, 55, 0.45),
                 0 0 40px rgba(212, 175, 55, 0.2);
-            padding-left: 8px;
+            padding-left: 10px;
         }
         .poem.show { opacity: 1; }
 
@@ -493,8 +494,8 @@
         },
 
         transition: {
-            poemHoldMs: 2800,
-            fadeMs: 1000
+            poemHoldMs: 3500,
+            fadeMs: 1500
         }
     };
 
@@ -544,7 +545,8 @@
         l2Extended: false,       // 第二章是否已加抽
         speedupAsked: false,     // 第一章是否已彈過加速詢問
         slowMode: false,         // 第一章玩家選了慢慢來
-        chain: null,             // 第三章 s/m 觸發鏈: { type, remaining, modifier, returnTo }
+        chain: null,             // 第三章 s/m 觸發鏈: { type, remaining, modifier, total }
+        pendingReveal: null,     // 第二章 mission/shame 二段式翻牌:暫存抽到的卡等二次點擊
         currentDraw: null,       // { category, file, type, modifier }
         actionPhase: 'idle'      // idle | revealed | rolled | timing | done
     };
@@ -732,7 +734,6 @@
     // ============================================================
     const Game = {
         acceptAge() {
-            try { localStorage.setItem(CONFIG.storageKey + '_age', '1'); } catch (e) {}
             Audio_.init();
             document.getElementById('age-gate').classList.remove('show');
             Game.start();
@@ -761,6 +762,15 @@
         handleFlip() {
             if (state.isFlipped || state.actionPhase !== 'idle') return;
 
+            // --- 第二章 mission/shame 二段式翻牌:
+            //     第一次點觸發提示視窗 + 換封面,
+            //     第二次才真正翻牌顯示卡面 ---
+            if (state.pendingReveal) {
+                const result = state.pendingReveal;
+                state.pendingReveal = null;
+                return Game._executeFlip(result);
+            }
+
             // 各章節抽卡
             let result;
             if (state.stage === 'level1') result = Picker.level1();
@@ -768,8 +778,33 @@
             else result = Picker.sexual();
 
             if (!result) return;
-            state.currentDraw = result;
 
+            // 第二章抽到密令/禁令:先彈提示視窗,等使用者確認後換封面,
+            // 讓他們自己再翻牌,感覺更像「親手抽到了」
+            if (state.stage === 'level2' &&
+                (result.category === 'mission' || result.category === 'shame')) {
+                const isMission = result.category === 'mission';
+                const msg = isMission
+                    ? '抽中春宮密令<br><span style="font-size:14px;color:#ccc;letter-spacing:2px;">是時候接受挑戰</span>'
+                    : '抽中羞恥禁令<br><span style="font-size:14px;color:#ccc;letter-spacing:2px;">準備好臉紅心跳</span>';
+                state.pendingReveal = result;
+                UI.showModal(msg, [{
+                    text: '翻牌',
+                    action() {
+                        UI.hideModal();
+                        // 換封面:帳暖春風 → 密令/禁令封面
+                        UI.setCardBack(`${result.category}-cover.${CONFIG.ext}`);
+                    }
+                }]);
+                return;
+            }
+
+            Game._executeFlip(result);
+        },
+
+        // 真正執行翻牌動畫 + 計數更新(chapter 2 mission/shame 第二次點後也走這)
+        _executeFlip(result) {
+            state.currentDraw = result;
             Audio_.play('flip');
 
             // 更新計數
@@ -793,11 +828,7 @@
             setTimeout(() => {
                 document.getElementById('action-area').style.display = 'block';
                 const type = Game._cardType(result.file);
-                if (type === '0') {
-                    UI.setBtnLabel('完成任務');
-                } else {
-                    UI.setBtnLabel('點擊擲骰');
-                }
+                UI.setBtnLabel(type === '0' ? '完成任務' : '點擊擲骰');
                 UI.updateProgress();
                 Game._maybeShowSubButtons();
             }, 650);
@@ -925,7 +956,7 @@
                 return Game._gameOver();
             }
 
-            // 第三章: s/m 卡完成 → 啟動觸發鏈
+            // 第三章: s/m 卡完成 → 彈提示視窗,告知維持體位,確認後才換封面進入觸發鏈
             if (state.stage === 'sexual' && state.currentDraw.triggersChain) {
                 const cfg = CONFIG.sexual.chainOnSuffix[state.currentDraw.triggersChain];
                 state.chain = {
@@ -934,9 +965,20 @@
                     modifier: cfg.modifier,
                     total: cfg.count
                 };
-                const hint = cfg.count > 1 ? `${STAGE_TITLES[cfg.type]} (共 ${cfg.count} 抽)` : STAGE_TITLES[cfg.type];
-                UI.toast(hint);
-                return Game._resetCard();
+                const subtitle = cfg.type === 'mission'
+                    ? '<span style="font-size:13px;color:#ccc;letter-spacing:2px;">抽取春宮密令</span>'
+                    : '<span style="font-size:13px;color:#ccc;letter-spacing:2px;">抽取羞恥禁令</span>';
+                UI.showModal(
+                    `維持目前體位<br>進行一項挑戰<br>${subtitle}`,
+                    [{
+                        text: '接受挑戰',
+                        action() {
+                            UI.hideModal();
+                            Game._resetCard();
+                        }
+                    }]
+                );
+                return;
             }
 
             // 在觸發鏈中: 一張完成,進入下一張或回主線
@@ -1190,17 +1232,7 @@
     // ============================================================
     // BOOT
     // ============================================================
-    (function boot() {
-        // 18+ 持久化檢查
-        try {
-            if (localStorage.getItem(CONFIG.storageKey + '_age') === '1') {
-                document.getElementById('age-gate').classList.remove('show');
-                // 仍要等使用者點任意處才能播音(瀏覽器限制),這裡直接 init
-                Audio_.init();
-                Game.start();
-            }
-        } catch (e) {}
-    })();
+    // 每次打開都從 age-gate 開始,不儲存確認狀態
     </script>
 </body>
 </html>
