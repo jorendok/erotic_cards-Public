@@ -36,8 +36,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: max(env(safe-area-inset-top), 15px) 0 max(env(safe-area-inset-bottom), 15px);
+            /* 移除 space-between,改用 gap + flex 讓卡牌自然填滿 */
+            justify-content: flex-start;
+            gap: 6px;
+            padding: max(env(safe-area-inset-top), 8px) 0 max(env(safe-area-inset-bottom), 8px);
         }
 
         /* ===== 工具列 ===== */
@@ -75,9 +77,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 3px;
-            margin-top: 12px;
-            min-height: 45px;
+            gap: 2px;
+            margin-top: 6px;
+            min-height: 34px;
         }
         #stage-header {
             color: var(--gold);
@@ -99,9 +101,12 @@
         /* ===== 卡牌區 ===== */
         .card-container {
             position: relative;
-            /* 高度 70vh,同時限制寬度不超過 88vw 換算的高度上限 */
-            height: min(70vh, calc(88vw * 945 / 472));
+            /* flex: 1 → 填滿 header 和 controls 之間所有空間 */
+            flex: 1 1 0;
+            min-height: 0;
+            /* aspect-ratio 決定寬度,max-width 防止超出螢幕 */
             aspect-ratio: 472 / 945;
+            max-width: 90vw;
             perspective: 1400px;
             margin: 0 auto;
             cursor: pointer;
@@ -143,14 +148,14 @@
         /* ===== 控制區 ===== */
         .controls-layer {
             width: 100%;
-            min-height: 105px;
+            min-height: 90px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             z-index: 10;
-            padding-top: 8px;
-            gap: 6px;
+            padding-top: 6px;
+            gap: 5px;
         }
         #dice-text {
             color: var(--gold-bright);
@@ -378,9 +383,10 @@
         .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
         @media (max-height: 700px) {
-            #stage-header { font-size: 15px; }
-            .controls-layer { min-height: 110px; }
-            .btn { padding: 11px 26px; font-size: 15px; }
+            #stage-header { font-size: 14px; letter-spacing: 4px; }
+            .controls-layer { min-height: 80px; }
+            .btn { padding: 10px 24px; font-size: 14px; }
+            #dice-text { font-size: 19px; }
         }
     </style>
 </head>
