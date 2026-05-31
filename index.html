@@ -75,9 +75,9 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
-            margin-top: 18px;
-            min-height: 50px;
+            gap: 3px;
+            margin-top: 12px;
+            min-height: 45px;
         }
         #stage-header {
             color: var(--gold);
@@ -99,7 +99,8 @@
         /* ===== 卡牌區 ===== */
         .card-container {
             position: relative;
-            height: min(72vh, calc(45vw * 945 / 472));
+            /* 高度 70vh,同時限制寬度不超過 88vw 換算的高度上限 */
+            height: min(70vh, calc(88vw * 945 / 472));
             aspect-ratio: 472 / 945;
             perspective: 1400px;
             margin: 0 auto;
@@ -142,14 +143,14 @@
         /* ===== 控制區 ===== */
         .controls-layer {
             width: 100%;
-            min-height: 130px;
+            min-height: 105px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: flex-start;
             z-index: 10;
-            padding-top: 10px;
-            gap: 8px;
+            padding-top: 8px;
+            gap: 6px;
         }
         #dice-text {
             color: var(--gold-bright);
@@ -240,7 +241,7 @@
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
         .gate-box {
-            padding: 32px 28px;
+            padding: 28px 24px;
             border: 1px solid var(--gold-soft);
             background:
                 linear-gradient(135deg, rgba(40, 20, 30, 0.6), rgba(20, 10, 20, 0.6)),
@@ -248,9 +249,17 @@
             border-radius: 20px;
             width: 100%;
             max-width: 380px;
+            max-height: 85dvh;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), inset 0 0 30px rgba(212, 175, 55, 0.08);
             animation: gateRise 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            /* scrollbar 樣式 */
+            scrollbar-width: thin;
+            scrollbar-color: rgba(212,175,55,0.3) transparent;
         }
+        .gate-box::-webkit-scrollbar { width: 4px; }
+        .gate-box::-webkit-scrollbar-thumb { background: rgba(212,175,55,0.3); border-radius: 2px; }
         @keyframes gateRise {
             from { transform: translateY(20px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
@@ -259,22 +268,34 @@
             color: var(--gold);
             font-weight: 600;
             letter-spacing: 4px;
-            margin: 0 0 18px;
+            margin: 0 0 16px;
             text-shadow: 0 0 16px rgba(212, 175, 55, 0.3);
         }
         .gate-box p, .gate-box .info-text {
             color: #ccc;
             font-size: 14px;
             line-height: 1.9;
-            margin-bottom: 22px;
+            margin-bottom: 20px;
         }
         .gate-box .info-text {
             text-align: left;
-            font-size: 13.5px;
+            font-size: 14px;    /* 從 13.5 提升到 14px */
+            line-height: 2.0;
         }
         .gate-box .info-text b {
             color: var(--gold-bright);
             letter-spacing: 2px;
+        }
+        /* 捲動提示漸層 (提示還有更多內容可往下滑) */
+        .gate-box.has-scroll::after {
+            content: '';
+            position: sticky;
+            bottom: 0;
+            display: block;
+            height: 28px;
+            margin: 0 -24px -28px;
+            background: linear-gradient(to bottom, transparent, rgba(13,10,13,0.9));
+            pointer-events: none;
         }
 
         .modal-buttons {
@@ -367,8 +388,27 @@
 
     <!-- 工具列 -->
     <div class="top-tools">
-        <div class="tool-btn" onclick="UI.showInfo()" aria-label="說明">&#x2139;&#xFE0E;</div>
-        <div id="mute-btn" class="tool-btn" onclick="Game.toggleMute()" aria-label="靜音">&#x1F514;&#xFE0E;</div>
+        <div class="tool-btn" onclick="UI.showInfo()" aria-label="說明">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="16" x2="12" y2="12"/>
+                <circle cx="12" cy="8" r="0.5" fill="currentColor" stroke-width="3"/>
+            </svg>
+        </div>
+        <div id="mute-btn" class="tool-btn" onclick="Game.toggleMute()" aria-label="靜音">
+            <!-- 預設聲音開:用 JS 在 init 後設定 -->
+            <svg id="icon-bell-on" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+            <svg id="icon-bell-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                <path d="M18.63 13A17.89 17.89 0 0 1 18 8"/>
+                <path d="M6.26 6.26A5.86 5.86 0 0 0 6 8c0 7-3 9-3 9h14"/>
+                <path d="M18 8a6 6 0 0 0-9.33-5"/>
+                <line x1="1" y1="1" x2="23" y2="23"/>
+            </svg>
+        </div>
     </div>
 
     <!-- 章節標題 + 進度 -->
@@ -755,7 +795,8 @@
 
         toggleMute() {
             state.isMuted = !state.isMuted;
-            document.getElementById('mute-btn').innerHTML = state.isMuted ? '&#x1F515;&#xFE0E;' : '&#x1F514;&#xFE0E;';
+            document.getElementById('icon-bell-on').style.display  = state.isMuted ? 'none' : '';
+            document.getElementById('icon-bell-off').style.display = state.isMuted ? ''     : 'none';
         },
 
         // ===== 翻牌 =====
